@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
+import ProtectedRoute from '../components/ProtectedRoute.jsx';
+import PageHeader from '../components/PageHeader.jsx';
+import FriendsList from '../components/FriendsList.jsx';
+---
+
+<Layout title="Amigos - Festival&Friends">
+  <Header client:only="react" />
+  
+  <ProtectedRoute client:load>
+    <main class="min-h-screen">
+      <PageHeader 
+        client:load
+        title="Tu crew y cada día la de más gente"
+        subtitle="Conecta con otros festivaleros y prepárate para lo que viene"
+        icon="users"
+        gradient="purple"
+        breadcrumbs={[
+          { label: 'Amigos', href: '/friends' }
+        ]}
+      />
+      
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 content-area">
+        <FriendsList client:load />
+      </div>
+    </main>
+  </ProtectedRoute>
+  
+  <Footer client:load showDemo={false} />
+</Layout> 

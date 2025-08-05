@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
+import ProtectedRoute from '../components/ProtectedRoute.jsx';
+import PageHeader from '../components/PageHeader.jsx';
+import FestivalsPage from '../components/FestivalsPage.jsx';
+---
+
+<Layout title="Festivales - Festival&Friends">
+  <Header client:only="react" />
+  
+  <ProtectedRoute client:load>
+    <main class="min-h-screen">
+      <PageHeader 
+        client:load
+        title="Festivales"
+        subtitle="Descubre los mejores festivales de música y organiza con tu crew"
+        icon="calendar"
+        gradient="orange"
+        breadcrumbs={[
+          { label: 'Festivales', href: '/festivals' }
+        ]}
+      />
+      
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 content-area">
+        <FestivalsPage client:load />
+      </div>
+    </main>
+  </ProtectedRoute>
+  
+  <Footer client:load showDemo={false} />
+</Layout>
+ 

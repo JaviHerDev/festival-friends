@@ -1,0 +1,353 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+  }
+  
+  body {
+    @apply bg-slate-900 text-white min-h-screen;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    /* Prevent horizontal scroll and improve mobile experience */
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  * {
+    @apply border-slate-700;
+  }
+  
+  /* Improve touch targets on mobile */
+  @media (max-width: 640px) {
+    button, a {
+      min-height: 44px; /* Apple's recommended minimum touch target */
+    }
+  }
+}
+
+@layer components {
+  .gradient-text {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass {
+    @apply bg-slate-900/40 backdrop-blur-md border-slate-700/50;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  .glass-dark {
+    @apply bg-slate-800/60 backdrop-blur-lg border-slate-600/50;
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  
+  .dropdown-menu {
+    @apply bg-slate-800/95 backdrop-blur-lg border-slate-600/70;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  }
+  
+  .mobile-menu {
+    background: rgba(30, 41, 59, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(71, 85, 105, 0.8);
+  }
+  
+  .btn-primary {
+    @apply relative bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-2xl border border-primary-400/30 hover:border-primary-300/50 overflow-hidden;
+    /* Improve mobile tap feedback */
+    @apply active:scale-95;
+    /* Add shimmer effect */
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  
+  .btn-primary::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+  
+  .btn-primary:hover::before {
+    transform: translateX(100%);
+  }
+  
+  .btn-primary:active::before {
+    transform: translateX(100%);
+  }
+  
+  .btn-secondary {
+    @apply relative bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/70 hover:to-slate-500/70 text-slate-200 font-semibold px-4 py-2 rounded-lg transition-all duration-300 border border-slate-500/40 hover:border-slate-400/50 overflow-hidden backdrop-blur-sm;
+    /* Improve mobile tap feedback */
+    @apply active:scale-95;
+  }
+  
+  .btn-secondary::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent;
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+  
+  .btn-secondary:hover::before {
+    transform: translateX(100%);
+  }
+  
+  .btn-secondary:active::before {
+    transform: translateX(100%);
+  }
+  
+  .btn-small {
+    @apply relative bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium px-3 py-1.5 rounded-md transition-all duration-300 shadow-md hover:shadow-lg border border-primary-400/30 hover:border-primary-300/50 overflow-hidden text-sm;
+    /* Improve mobile tap feedback */
+    @apply active:scale-95;
+    /* Add shimmer effect */
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  
+  .btn-small::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+  
+  .btn-small:hover::before {
+    transform: translateX(100%);
+  }
+  
+  .btn-small:active::before {
+    transform: translateX(100%);
+  }
+  
+  .card {
+    @apply glass rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-700/50;
+    /* Improve mobile interaction */
+    @apply active:scale-95;
+  }
+  
+  .input {
+    @apply w-full bg-slate-800/50 border border-slate-600/50 text-white placeholder-slate-400 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+    /* Improve mobile input experience */
+    @apply text-base; /* Prevents zoom on iOS */
+  }
+  
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+  
+  /* Mobile-specific improvements */
+  @media (max-width: 640px) {
+    .card {
+      @apply p-4; /* Smaller padding on mobile */
+    }
+    
+    .glass {
+      /* Less blur on mobile for better performance */
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-500;
+}
+
+/* Mobile scrollbar (thinner) */
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* Prevent zoom on iOS when focusing inputs */
+@supports (-webkit-touch-callout: none) {
+  input[type="text"],
+  input[type="email"], 
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Improve focus visibility for accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  @apply ring-2 ring-primary-500 ring-offset-2 ring-offset-slate-900;
+}
+
+/* Custom animations for menu active states */
+@keyframes menu-glow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes menu-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes menu-slide {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.menu-active-glow {
+  animation: menu-glow 2s ease-in-out infinite;
+}
+
+.menu-active-pulse {
+  animation: menu-pulse 1.5s ease-in-out infinite;
+}
+
+.menu-active-slide {
+  animation: menu-slide 0.3s ease-out;
+}
+
+/* Shimmer animation for buttons */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Button glow effect */
+@keyframes button-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+  }
+}
+
+/* Enhanced button states */
+.btn-primary:hover {
+  animation: button-glow 2s ease-in-out infinite;
+}
+
+/* Button focus states for accessibility */
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+  @apply ring-2 ring-primary-500 ring-offset-2 ring-offset-slate-900 outline-none;
+}
+
+/* Button disabled states */
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+  animation: none;
+}
+
+.btn-primary:disabled::before,
+.btn-secondary:disabled::before {
+  display: none;
+}
+
+/* Modal overlay fixes */
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 100 !important;
+}
+
+/* Ensure modals cover full screen without margins */
+.modal-overlay > div {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+}
+
+/* Hide scrollbar for horizontal scrolling elements */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+} 

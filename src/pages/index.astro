@@ -1,0 +1,986 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
+import FestivalDemoCard from '../components/FestivalDemoCard.jsx';
+import GlobalStats from '../components/GlobalStats.jsx';
+import GalleryCarousel from '../components/GalleryCarousel.jsx';
+import FAQAccordion from '../components/FAQAccordion.jsx';
+---
+
+<Layout title="Festival&Friends - La red social musical">
+  <Header client:only="react" />
+  
+  <main>
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center px-4 relative overflow-hidden pt-20 md:pt-20 lg:pt-24">
+      <!-- Enhanced Background elements -->
+      <div class="absolute inset-0 -z-10">
+        <!-- Main background gradient -->
+        <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-black"></div>
+        
+        <!-- Enhanced gradient orbs that complement particles -->
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-primary-400/15 to-purple-400/15 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-purple-400/12 to-pink-400/12 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 1s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-green-400/10 to-blue-400/10 rounded-full blur-2xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/3 right-1/3 w-56 h-56 bg-gradient-to-r from-yellow-400/8 to-orange-400/8 rounded-full blur-2xl animate-pulse-slow" style="animation-delay: 3s;"></div>
+        <div class="absolute bottom-1/3 left-1/6 w-64 h-64 bg-gradient-to-r from-pink-400/10 to-red-400/10 rounded-full blur-2xl animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+        <div class="absolute top-1/6 right-1/6 w-48 h-48 bg-gradient-to-r from-blue-400/12 to-indigo-400/12 rounded-full blur-2xl animate-pulse-slow" style="animation-delay: 2.5s;"></div>
+        
+        <!-- Mesh gradient overlay -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30"></div>
+        
+        <!-- Animated grid pattern -->
+        <div class="absolute inset-0 opacity-5">
+          <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0); background-size: 50px 50px;"></div>
+        </div>
+        
+        <!-- Advanced floating particles system -->
+        <div class="absolute inset-0 overflow-hidden">
+          <!-- Dense particle grid covering entire background -->
+          {Array.from({ length: 200 }, (_, i) => (
+            <div 
+              class="absolute w-0.5 h-0.5 bg-white/10 rounded-full animate-pulse"
+              style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 5}s; animation-duration: ${1 + Math.random() * 4}s;`}
+            ></div>
+          ))}
+          
+          <!-- Medium particles with colors -->
+          {Array.from({ length: 150 }, (_, i) => {
+            const colors = ['bg-primary-400/15', 'bg-purple-400/12', 'bg-green-400/14', 'bg-pink-400/10', 'bg-yellow-400/8', 'bg-blue-400/11', 'bg-orange-400/13', 'bg-red-400/9'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            return (
+              <div 
+                class={`absolute w-1 h-1 ${color} rounded-full animate-pulse`}
+                style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 6}s; animation-duration: ${2 + Math.random() * 3}s;`}
+              ></div>
+            );
+          })}
+          
+          <!-- Larger particles with gradients -->
+          {Array.from({ length: 80 }, (_, i) => {
+            const gradients = [
+              'bg-gradient-to-r from-primary-400/20 to-purple-400/20',
+              'bg-gradient-to-r from-green-400/15 to-blue-400/15',
+              'bg-gradient-to-r from-pink-400/18 to-yellow-400/18',
+              'bg-gradient-to-r from-orange-400/16 to-red-400/16',
+              'bg-gradient-to-r from-purple-400/14 to-pink-400/14'
+            ];
+            const gradient = gradients[Math.floor(Math.random() * gradients.length)];
+            return (
+              <div 
+                class={`absolute w-1.5 h-1.5 ${gradient} rounded-full animate-pulse`}
+                style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 4}s; animation-duration: ${3 + Math.random() * 2}s;`}
+              ></div>
+            );
+          })}
+          
+          <!-- Special accent particles with ping effect -->
+          {Array.from({ length: 40 }, (_, i) => (
+            <div 
+              class="absolute w-2 h-2 bg-white/25 rounded-full animate-ping"
+              style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 3}s; animation-duration: ${2 + Math.random() * 2}s;`}
+            ></div>
+          ))}
+          
+          <!-- Glowing particles with blur effect -->
+          {Array.from({ length: 25 }, (_, i) => (
+            <div 
+              class="absolute w-3 h-3 bg-primary-400/30 rounded-full animate-pulse blur-sm"
+              style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 5}s; animation-duration: ${4 + Math.random() * 3}s;`}
+            ></div>
+          ))}
+          
+          <!-- Moving particles with custom animations -->
+          {Array.from({ length: 60 }, (_, i) => {
+            const colors = ['bg-purple-400/20', 'bg-green-400/18', 'bg-pink-400/16', 'bg-yellow-400/14', 'bg-blue-400/22'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            return (
+              <div 
+                class={`absolute w-1 h-1 ${color} rounded-full animate-bounce`}
+                style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 4}s; animation-duration: ${2 + Math.random() * 3}s;`}
+              ></div>
+            );
+          })}
+          
+          <!-- Star-like particles -->
+          {Array.from({ length: 30 }, (_, i) => (
+            <div 
+              class="absolute w-0.5 h-0.5 bg-white/40 rounded-full animate-ping"
+              style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 2}s; animation-duration: ${1 + Math.random() * 2}s;`}
+            ></div>
+          ))}
+          
+          <!-- Energy particles with glow -->
+          {Array.from({ length: 20 }, (_, i) => (
+            <div 
+              class="absolute w-2 h-2 bg-gradient-to-r from-yellow-400/40 to-orange-400/40 rounded-full animate-pulse shadow-lg shadow-yellow-400/20"
+              style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 6}s; animation-duration: ${3 + Math.random() * 2}s;`}
+            ></div>
+          ))}
+          
+          <!-- Floating orbs with transparency -->
+          {Array.from({ length: 15 }, (_, i) => (
+            <div 
+              class="absolute w-4 h-4 bg-gradient-to-r from-primary-400/15 to-purple-400/15 rounded-full animate-pulse backdrop-blur-sm"
+              style={`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; animation-delay: ${Math.random() * 7}s; animation-duration: ${5 + Math.random() * 3}s;`}
+            ></div>
+          ))}
+        </div>
+        
+        <!-- Light rays effect -->
+        <div class="absolute inset-0 overflow-hidden">
+          <div class="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-br from-primary-500/10 to-transparent rounded-full blur-3xl animate-spin" style="animation-duration: 20s;"></div>
+          <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-gradient-to-tl from-purple-500/10 to-transparent rounded-full blur-3xl animate-spin" style="animation-duration: 25s; animation-direction: reverse;"></div>
+        </div>
+      </div>
+      
+      <div class="max-w-6xl mx-auto text-center">
+        <div class="animate-float">
+          <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold mb-4 sm:mb-6">
+            <span class="gradient-text">Festival</span>
+            <span class="text-white">&</span>
+            <span class="gradient-text">Friends</span>
+          </h1>
+        </div>
+        
+        <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-300 mb-6 sm:mb-8 max-w-2xl sm:max-w-3xl mx-auto leading-relaxed px-4">
+          La red social definitiva para amantes de la música. Conecta con tus amigos, descubre festivales épicos 
+          y vive la experiencia musical como nunca antes.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8 sm:mb-12 px-4">
+          <button class="btn-primary text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 transform hover:scale-105 transition-transform duration-200" data-open-login="true">
+            🎸 Únete a la Familia
+          </button>
+          <a href="#features" class="btn-secondary text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 transform hover:scale-105 transition-transform duration-200">
+            Descubre Más
+          </a>
+        </div>
+        
+        <!-- Enhanced Stats Section -->
+        <GlobalStats client:load />
+      </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features" class="py-12 sm:py-16 md:py-20 px-4">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-center mb-8 sm:mb-12 md:mb-16 px-4">
+          <span class="gradient-text">¿Por qué Festival&Friends?</span>
+        </h2>
+        
+        <!-- Enhanced Features Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-16">
+          <!-- Card 1: Descubre Festivales -->
+          <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-700 ease-out hover:shadow-xl hover:shadow-primary-500/10 hover:border-primary-500/20">
+            <!-- Subtle background gradient on hover -->
+            <div class="absolute inset-0 bg-gradient-to-br from-primary-500/3 to-purple-500/3 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            
+            <!-- Large Image Header with enhanced animations -->
+            <div class="relative h-40 sm:h-48 overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-700 ease-out"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                alt="Descubre Festivales"
+                class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000 ease-out"
+              />
+              <!-- Subtle glow effect -->
+              <div class="absolute inset-0 bg-primary-500/10 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            </div>
+            
+            <!-- Content with smooth animations -->
+            <div class="relative z-10 p-4 sm:p-6 transform group-hover:translate-y-0 transition-all duration-700 ease-out">
+              <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white group-hover:text-primary-200 transition-all duration-500 ease-out">
+                Descubre Festivales
+              </h3>
+              <p class="text-slate-300 leading-relaxed text-xs sm:text-sm group-hover:text-slate-100 transition-all duration-500 ease-out">
+                Explora los mejores festivales de música. Busca por nombre, ubicación 
+                y encuentra tu próximo evento favorito con toda la información.
+              </p>
+            </div>
+            
+            <!-- Subtle decorative elements -->
+            <div class="absolute top-3 right-3 w-1.5 h-1.5 bg-primary-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700 ease-out delay-200"></div>
+            <div class="absolute bottom-3 left-3 w-1 h-1 bg-purple-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-700 ease-out delay-300"></div>
+          </div>
+          
+          <!-- Card 2: Gestiona Asistencias -->
+          <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-700 ease-out hover:shadow-xl hover:shadow-purple-500/10 hover:border-purple-500/20">
+            <!-- Subtle background gradient on hover -->
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/3 to-pink-500/3 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            
+            <!-- Large Image Header with enhanced animations -->
+            <div class="relative h-40 sm:h-48 overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-700 ease-out"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                alt="Gestiona Asistencias"
+                class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000 ease-out"
+              />
+              <!-- Subtle glow effect -->
+              <div class="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            </div>
+            
+            <!-- Content with smooth animations -->
+            <div class="relative z-10 p-4 sm:p-6 transform group-hover:translate-y-0 transition-all duration-700 ease-out">
+              <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white group-hover:text-purple-200 transition-all duration-500 ease-out">
+                Gestiona Asistencias
+              </h3>
+              <p class="text-slate-300 leading-relaxed text-xs sm:text-sm group-hover:text-slate-100 transition-all duration-500 ease-out">
+                Indica fácilmente tu estado: "Tengo la entrada" 🎫, "Me lo estoy pensando" 🤔 
+                o "No voy" ❌. Tus amigos siempre sabrán tu plan.
+              </p>
+            </div>
+            
+            <!-- Subtle decorative elements -->
+            <div class="absolute top-3 right-3 w-1.5 h-1.5 bg-purple-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700 ease-out delay-200"></div>
+            <div class="absolute bottom-3 left-3 w-1 h-1 bg-pink-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-700 ease-out delay-300"></div>
+          </div>
+          
+          <!-- Card 3: Encuestas e Insignias -->
+          <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-700 ease-out hover:shadow-xl hover:shadow-green-500/10 hover:border-green-500/20">
+            <!-- Subtle background gradient on hover -->
+            <div class="absolute inset-0 bg-gradient-to-br from-green-500/3 to-blue-500/3 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            
+            <!-- Large Image Header with enhanced animations -->
+            <div class="relative h-40 sm:h-48 overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-700 ease-out"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                alt="Encuestas e Insignias"
+                class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000 ease-out"
+              />
+              <!-- Subtle glow effect -->
+              <div class="absolute inset-0 bg-green-500/10 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            </div>
+            
+            <!-- Content with smooth animations -->
+            <div class="relative z-10 p-4 sm:p-6 transform group-hover:translate-y-0 transition-all duration-700 ease-out">
+              <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white group-hover:text-green-200 transition-all duration-500 ease-out">
+                Encuestas e Insignias
+              </h3>
+              <p class="text-slate-300 leading-relaxed text-xs sm:text-sm group-hover:text-slate-100 transition-all duration-500 ease-out">
+                Participa en encuestas post-festival, vota por los mejores festivaleros 
+                y gana insignias automáticamente cuando se cierran las encuestas.
+              </p>
+            </div>
+            
+            <!-- Subtle decorative elements -->
+            <div class="absolute top-3 right-3 w-1.5 h-1.5 bg-green-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700 ease-out delay-200"></div>
+            <div class="absolute bottom-3 left-3 w-1 h-1 bg-blue-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-700 ease-out delay-300"></div>
+          </div>
+          
+          <!-- Card 4: Notificaciones en Tiempo Real -->
+          <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-700 ease-out hover:shadow-xl hover:shadow-pink-500/10 hover:border-pink-500/20">
+            <!-- Subtle background gradient on hover -->
+            <div class="absolute inset-0 bg-gradient-to-br from-pink-500/3 to-red-500/3 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            
+            <!-- Large Image Header with enhanced animations -->
+            <div class="relative h-40 sm:h-48 overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-700 ease-out"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                alt="Notificaciones en Tiempo Real"
+                class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000 ease-out"
+              />
+              <!-- Subtle glow effect -->
+              <div class="absolute inset-0 bg-pink-500/10 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            </div>
+            
+            <!-- Content with smooth animations -->
+            <div class="relative z-10 p-4 sm:p-6 transform group-hover:translate-y-0 transition-all duration-700 ease-out">
+              <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white group-hover:text-pink-200 transition-all duration-500 ease-out">
+                Notificaciones en Tiempo Real
+              </h3>
+              <p class="text-slate-300 leading-relaxed text-xs sm:text-sm group-hover:text-slate-100 transition-all duration-500 ease-out">
+                Recibe notificaciones automáticas de nuevos festivales, cambios de asistencia, 
+                encuestas disponibles y nuevas insignias ganadas.
+              </p>
+            </div>
+            
+            <!-- Subtle decorative elements -->
+            <div class="absolute top-3 right-3 w-1.5 h-1.5 bg-pink-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700 ease-out delay-200"></div>
+            <div class="absolute bottom-3 left-3 w-1 h-1 bg-red-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-700 ease-out delay-300"></div>
+          </div>
+          
+          <!-- Card 5: Red Social de Amigos -->
+          <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-700 ease-out hover:shadow-xl hover:shadow-yellow-500/10 hover:border-yellow-500/20">
+            <!-- Subtle background gradient on hover -->
+            <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/3 to-orange-500/3 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            
+            <!-- Large Image Header with enhanced animations -->
+            <div class="relative h-40 sm:h-48 overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-700 ease-out"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                alt="Red Social de Amigos"
+                class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000 ease-out"
+              />
+              <!-- Subtle glow effect -->
+              <div class="absolute inset-0 bg-yellow-500/10 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            </div>
+            
+            <!-- Content with smooth animations -->
+            <div class="relative z-10 p-4 sm:p-6 transform group-hover:translate-y-0 transition-all duration-700 ease-out">
+              <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white group-hover:text-yellow-200 transition-all duration-500 ease-out">
+                Red Social de Amigos
+              </h3>
+              <p class="text-slate-300 leading-relaxed text-xs sm:text-sm group-hover:text-slate-100 transition-all duration-500 ease-out">
+                Conecta con otros festivaleros, busca por nombre, nickname o ciudad. 
+                Descubre perfiles con información de contacto y redes sociales.
+              </p>
+            </div>
+            
+            <!-- Subtle decorative elements -->
+            <div class="absolute top-3 right-3 w-1.5 h-1.5 bg-yellow-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700 ease-out delay-200"></div>
+            <div class="absolute bottom-3 left-3 w-1 h-1 bg-orange-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-700 ease-out delay-300"></div>
+          </div>
+          
+          <!-- Card 6: Árbol de Conexiones -->
+          <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-700 ease-out hover:shadow-xl hover:shadow-red-500/10 hover:border-red-500/20">
+            <!-- Subtle background gradient on hover -->
+            <div class="absolute inset-0 bg-gradient-to-br from-red-500/3 to-pink-500/3 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            
+            <!-- Large Image Header with enhanced animations -->
+            <div class="relative h-40 sm:h-48 overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-700 ease-out"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                alt="Árbol de Conexiones"
+                class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000 ease-out"
+              />
+              <!-- Subtle glow effect -->
+              <div class="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out"></div>
+            </div>
+            
+            <!-- Content with smooth animations -->
+            <div class="relative z-10 p-4 sm:p-6 transform group-hover:translate-y-0 transition-all duration-700 ease-out">
+              <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white group-hover:text-red-200 transition-all duration-500 ease-out">
+                Árbol de Conexiones
+              </h3>
+              <p class="text-slate-300 leading-relaxed text-xs sm:text-sm group-hover:text-slate-100 transition-all duration-500 ease-out">
+                Visualiza cómo estás conectado con otros festivaleros en la comunidad. 
+                Descubre nuevas amistades a través de conexiones existentes.
+              </p>
+            </div>
+            
+            <!-- Subtle decorative elements -->
+            <div class="absolute top-3 right-3 w-1.5 h-1.5 bg-red-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700 ease-out delay-200"></div>
+            <div class="absolute bottom-3 left-3 w-1 h-1 bg-pink-400/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-700 ease-out delay-300"></div>
+          </div>
+        </div>
+        
+                <!-- Enhanced Interactive Experience Section -->
+        <div class="space-y-12 sm:space-y-16">
+          <!-- Festival Management Demo -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
+            <!-- Left Column: Content -->
+            <div class="space-y-6 sm:space-y-8">
+              <div class="space-y-4 sm:space-y-6">
+                <h3 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                  Experiencia Interactiva
+                </h3>
+                <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                  Nuestra plataforma te permite gestionar tu asistencia a festivales de forma intuitiva. 
+                  Ve quién más va, coordina con amigos y nunca te pierdas un evento increíble.
+                </p>
+              </div>
+              
+              <!-- Interactive Status Cards -->
+              <div class="space-y-4 sm:space-y-6">
+                <h4 class="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">Estados de Asistencia</h4>
+                
+                <!-- Status Card 1: Confirmed -->
+                <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-3 sm:p-4 transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-500 ease-out hover:shadow-lg hover:shadow-green-500/10 hover:border-green-500/20">
+                  <div class="flex items-center space-x-3 sm:space-x-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg shadow-green-500/25 group-hover:scale-110 transition-transform duration-300">
+                      ✓
+                    </div>
+                    <div class="flex-1">
+                      <h5 class="text-white font-semibold text-base sm:text-lg group-hover:text-green-200 transition-colors duration-300">
+                        Tengo la entrada
+                      </h5>
+                      <p class="text-slate-400 text-xs sm:text-sm group-hover:text-slate-300 transition-colors duration-300">
+                        Confirmado y listo para disfrutar
+                      </p>
+                    </div>
+                    <div class="text-green-400 text-xl sm:text-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1">
+                      →
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Status Card 2: Thinking -->
+                <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-500 ease-out hover:shadow-lg hover:shadow-yellow-500/10 hover:border-yellow-500/20">
+                  <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-yellow-500/25 group-hover:scale-110 transition-transform duration-300">
+                      ?
+                    </div>
+                    <div class="flex-1">
+                      <h5 class="text-white font-semibold text-base sm:text-lg group-hover:text-green-200 transition-colors duration-300">
+                        Me lo estoy pensando
+                      </h5>
+                      <p class="text-slate-400 text-sm group-hover:text-slate-300 transition-colors duration-300">
+                        Evaluando opciones y presupuesto
+                      </p>
+                    </div>
+                    <div class="text-yellow-400 text-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1">
+                      →
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Status Card 3: Not Going -->
+                <div class="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-500 ease-out hover:shadow-lg hover:shadow-red-500/10 hover:border-red-500/20">
+                  <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-red-500/25 group-hover:scale-110 transition-transform duration-300">
+                      ✗
+                    </div>
+                    <div class="flex-1">
+                      <h5 class="text-white font-semibold text-base sm:text-lg group-hover:text-green-200 transition-colors duration-300">
+                        No voy
+                      </h5>
+                      <p class="text-slate-400 text-sm group-hover:text-slate-300 transition-colors duration-300">
+                        No puedo asistir esta vez
+                      </p>
+                    </div>
+                    <div class="text-red-400 text-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1">
+                      →
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Right Column: Interactive Demo Card -->
+            <div class="relative">
+              <FestivalDemoCard client:load />
+            </div>
+          </div>
+
+          <!-- Friends Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
+            <div class="space-y-4 sm:space-y-6">
+              <div class="space-y-3 sm:space-y-4">
+                <h4 class="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  La Familia Musical
+                </h4>
+                <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                  Conecta con otros amantes de la música de la comunidad. Descubre perfiles, 
+                  comparte experiencias y construye tu red musical.
+                </p>
+              </div>
+              
+              <!-- Friends Features -->
+              <div class="space-y-3 sm:space-y-4">
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Perfiles Completos</h5>
+                    <p class="text-slate-400 text-sm">Descubre información detallada de cada músico</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-pink-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Búsqueda Avanzada</h5>
+                    <p class="text-slate-400 text-sm">Encuentra músicos por nombre, ciudad o género</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Contacto Directo</h5>
+                    <p class="text-slate-400 text-sm">Conecta por WhatsApp, Instagram o Twitter</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Real Friend Card Demo -->
+            <div class="card p-4 sm:p-5 space-y-3 sm:space-y-4">
+              <div class="flex items-start space-x-3 sm:space-x-4">
+                <!-- Avatar -->
+                <div class="relative flex-shrink-0">
+                  <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center border-2 border-purple-500/30">
+                    <span class="text-white font-bold text-lg sm:text-xl">👩‍🎤</span>
+                  </div>
+                  <div class="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-slate-800 rounded-full"></div>
+                </div>
+
+                <!-- Name and info -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-2">
+                    <h4 class="text-base sm:text-lg font-semibold text-white">Luna Punk</h4>
+                  </div>
+                  <p class="text-purple-400 text-xs sm:text-sm font-medium">@lunapunk</p>
+                  
+                  <div class="space-y-1 mt-2">
+                    <div class="flex items-center space-x-1 text-xs sm:text-sm text-slate-400">
+                      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      <span>Madrid, España</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bio -->
+              <div>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Punk de corazón. Amante de los festivales underground y la música que hace vibrar el alma.
+                </p>
+              </div>
+
+              <!-- Key phrase -->
+              <div class="bg-purple-500/10 rounded-lg p-2 sm:p-3 border border-purple-500/20">
+                <p class="text-xs text-purple-300 italic">
+                  💭 "La música es la revolución del alma"
+                </p>
+              </div>
+
+              <!-- Contact buttons -->
+              <div class="flex space-x-2">
+                <div class="p-2 bg-slate-700/50 hover:bg-green-500/20 text-slate-300 hover:text-green-400 transition-all duration-300 rounded-lg border border-slate-600/50 hover:border-green-500/30 cursor-pointer">
+                  <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                  </svg>
+                </div>
+                
+                <div class="p-2 bg-slate-700/50 hover:bg-pink-500/20 text-slate-300 hover:text-pink-400 transition-all duration-300 rounded-lg border border-slate-600/50 hover:border-pink-500/30 cursor-pointer">
+                  <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Connection info -->
+              <div class="text-xs text-slate-400">
+                🔗 Conectado a través de <span class="text-purple-300 font-medium">Alex</span>
+              </div>
+
+              <!-- View Profile Button -->
+              <div class="w-full bg-slate-700/50 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 border border-slate-600/50 hover:border-purple-500/50 text-xs sm:text-sm cursor-pointer text-center">
+                Ver Perfil
+              </div>
+            </div>
+          </div>
+
+          <!-- Connections Tree Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="space-y-6">
+              <div class="space-y-4">
+                <h4 class="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                  Árbol de Conexiones
+                </h4>
+                <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                  Visualiza cómo se conectan los miembros de la familia musical. 
+                  Descubre las relaciones y nexos entre la comunidad.
+                </p>
+              </div>
+              
+              <!-- Tree Features -->
+              <div class="space-y-4">
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Visualización Interactiva</h5>
+                    <p class="text-slate-400 text-sm">Explora conexiones con zoom y navegación</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Búsqueda en el Árbol</h5>
+                    <p class="text-slate-400 text-sm">Encuentra miembros específicos rápidamente</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Expandir y Colapsar</h5>
+                    <p class="text-slate-400 text-sm">Controla la vista del árbol de conexiones</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Tree Demo Card -->
+            <div class="card p-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xl font-bold text-white">🌳 Árbol Visual</h4>
+                <span class="px-2 py-1 bg-green-600/20 text-green-400 rounded-full text-xs">24 miembros</span>
+              </div>
+              
+              <!-- Tree Visualization Demo -->
+              <div class="relative bg-slate-900/30 rounded-lg border border-slate-700/50 p-4 h-64 overflow-hidden">
+                <!-- Background grid -->
+                <div class="absolute inset-0 opacity-20">
+                  <svg width="100%" height="100%" viewBox="0 0 400 200">
+                                         <defs>
+                       <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                         <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#475569" stroke-width="1"/>
+                       </pattern>
+                     </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                  </svg>
+                </div>
+                
+                                 <!-- Tree nodes -->
+                 <svg width="100%" height="100%" viewBox="0 0 400 200" class="relative z-10">
+                   <!-- Root node (current user) -->
+                   <g>
+                     <rect x="180" y="20" width="40" height="30" rx="6" fill="#3b82f6" stroke="#60a5fa" stroke-width="2"/>
+                     <circle cx="200" cy="35" r="8" fill="#60a5fa"/>
+                     <text x="200" y="45" text-anchor="middle" fill="white" font-size="8" font-weight="bold">Tú</text>
+                     <circle cx="220" cy="15" r="4" fill="#10b981"/>
+                   </g>
+                   
+                   <!-- Connection lines -->
+                   <line x1="200" y1="50" x2="200" y2="70" stroke="#475569" stroke-width="2" stroke-dasharray="3,3"/>
+                   <line x1="200" y1="70" x2="120" y2="90" stroke="#475569" stroke-width="2" stroke-dasharray="3,3"/>
+                   <line x1="200" y1="70" x2="280" y2="90" stroke="#475569" stroke-width="2" stroke-dasharray="3,3"/>
+                   
+                   <!-- Child nodes -->
+                   <g>
+                     <rect x="100" y="100" width="40" height="30" rx="6" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                     <circle cx="120" cy="115" r="8" fill="#8b5cf6"/>
+                     <text x="120" y="125" text-anchor="middle" fill="white" font-size="8">Luna</text>
+                   </g>
+                   
+                   <g>
+                     <rect x="260" y="100" width="40" height="30" rx="6" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                     <circle cx="280" cy="115" r="8" fill="#f59e0b"/>
+                     <text x="280" y="125" text-anchor="middle" fill="white" font-size="8">Carlos</text>
+                   </g>
+                   
+                   <!-- More connections -->
+                   <line x1="120" y1="130" x2="120" y2="150" stroke="#475569" stroke-width="2" stroke-dasharray="3,3"/>
+                   <line x1="120" y1="150" x2="80" y2="170" stroke="#475569" stroke-width="2" stroke-dasharray="3,3"/>
+                   <line x1="120" y1="150" x2="160" y2="170" stroke="#475569" stroke-width="2" stroke-dasharray="3,3"/>
+                   
+                   <g>
+                     <rect x="60" y="180" width="40" height="30" rx="6" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                     <circle cx="80" cy="195" r="8" fill="#ef4444"/>
+                     <text x="80" y="205" text-anchor="middle" fill="white" font-size="8">Ana</text>
+                   </g>
+                   
+                   <g>
+                     <rect x="140" y="180" width="40" height="30" rx="6" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                     <circle cx="160" cy="195" r="8" fill="#10b981"/>
+                     <text x="160" y="205" text-anchor="middle" fill="white" font-size="8">Miguel</text>
+                   </g>
+                 </svg>
+                
+                <!-- Controls overlay -->
+                <div class="absolute bottom-2 right-2 flex space-x-1">
+                  <button class="px-2 py-1 bg-slate-700/50 text-white text-xs rounded border border-slate-600/50">
+                    🔍−
+                  </button>
+                  <button class="px-2 py-1 bg-slate-700/50 text-white text-xs rounded border border-slate-600/50">
+                    🔍+
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Tree stats -->
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="p-2 bg-green-600/10 rounded border border-green-600/20">
+                  <div class="text-lg font-bold text-green-400">24</div>
+                  <div class="text-xs text-slate-400">Miembros</div>
+                </div>
+                <div class="p-2 bg-blue-600/10 rounded border border-blue-600/20">
+                  <div class="text-lg font-bold text-blue-400">18</div>
+                  <div class="text-xs text-slate-400">Conexiones</div>
+                </div>
+                <div class="p-2 bg-purple-600/10 rounded border border-purple-600/20">
+                  <div class="text-lg font-bold text-purple-400">6</div>
+                  <div class="text-xs text-slate-400">Raíces</div>
+                </div>
+              </div>
+              
+              <!-- Tree info -->
+              <div class="pt-2 border-t border-slate-700/50">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-400">Tu nivel:</span>
+                  <span class="text-green-400 font-semibold">Raíz</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-400">Conexiones directas:</span>
+                  <span class="text-blue-400 font-semibold">2</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications & Communication Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="space-y-6">
+              <div class="space-y-4">
+                <h4 class="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                  Mantente Conectado
+                </h4>
+                <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                  Recibe notificaciones en tiempo real sobre festivales, amigos y eventos. 
+                  Mantente informado sobre todo lo que pasa en la comunidad musical.
+                </p>
+              </div>
+              
+              <!-- Notification Features -->
+              <div class="space-y-4">
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4.19 4.82A4 4 0 015.28 4H18.72a4 4 0 013.09 1.82L21 8H3l1.19-3.18zM4 8v10a2 2 0 002 2h12a2 2 0 002-2V8H4z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Notificaciones Inteligentes</h5>
+                    <p class="text-slate-400 text-sm">Alertas personalizadas sobre festivales y amigos</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Favoritos y Seguimiento</h5>
+                    <p class="text-slate-400 text-sm">Marca festivales favoritos y recibe actualizaciones</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Notifications Demo Card -->
+            <div class="card p-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xl font-bold text-white">Notificaciones</h4>
+                <div class="relative">
+                  <svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4.19 4.82A4 4 0 015.28 4H18.72a4 4 0 013.09 1.82L21 8H3l1.19-3.18zM4 8v10a2 2 0 002 2h12a2 2 0 002-2V8H4z"></path>
+                  </svg>
+                  <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                </div>
+              </div>
+              
+              <div class="space-y-3">
+                <div class="flex items-start space-x-3 p-3 bg-green-600/10 rounded-lg border border-green-600/20">
+                  <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-white text-sm font-medium">Nuevo festival creado</p>
+                    <p class="text-slate-400 text-xs">Tomorrowland 2024 ha sido añadido</p>
+                    <p class="text-slate-500 text-xs">Hace 2 horas</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-start space-x-3 p-3 bg-blue-600/10 rounded-lg border border-blue-600/20">
+                  <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-white text-sm font-medium">Nuevo amigo añadido</p>
+                    <p class="text-slate-400 text-xs">Luna Punk se ha unido a tu crew</p>
+                    <p class="text-slate-500 text-xs">Hace 1 día</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="pt-4 border-t border-slate-700/50">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-400">No leídas:</span>
+                  <span class="text-yellow-400 font-semibold">2</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-400">Total:</span>
+                  <span class="text-white font-semibold">11</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Festival Management Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="space-y-6">
+              <div class="space-y-4">
+                <h4 class="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                  Gestiona tus Festivales
+                </h4>
+                <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                  Descubre, organiza y coordina tu asistencia a festivales. 
+                  Mantén a tu comunidad informada sobre tus planes musicales.
+                </p>
+              </div>
+              
+              <!-- Festival Features -->
+              <div class="space-y-4">
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Calendario de Eventos</h5>
+                    <p class="text-slate-400 text-sm">Organiza y visualiza todos tus festivales</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Ubicaciones y Rutas</h5>
+                    <p class="text-slate-400 text-sm">Encuentra festivales cerca de ti</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  <div class="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                    <svg class="h-5 w-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-white font-semibold">Preferencias Personalizadas</h5>
+                    <p class="text-slate-400 text-sm">Configura tus géneros y ubicaciones favoritas</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Festival Stats Card -->
+            <div class="card p-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xl font-bold text-white">Mis Estadísticas</h4>
+                <span class="px-2 py-1 bg-green-600/20 text-green-400 rounded-full text-xs">2024</span>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-4 bg-green-600/10 rounded-lg border border-green-600/20">
+                  <div class="text-2xl font-bold text-green-400">8</div>
+                  <div class="text-slate-400 text-sm">Festivales</div>
+                  <div class="text-green-400 text-xs">Confirmados</div>
+                </div>
+                
+                <div class="text-center p-4 bg-yellow-600/10 rounded-lg border border-yellow-600/20">
+                  <div class="text-2xl font-bold text-yellow-400">5</div>
+                  <div class="text-slate-400 text-sm">Festivales</div>
+                  <div class="text-yellow-400 text-xs">Evaluando</div>
+                </div>
+                
+                <div class="text-center p-4 bg-blue-600/10 rounded-lg border border-blue-600/20">
+                  <div class="text-2xl font-bold text-blue-400">12</div>
+                  <div class="text-slate-400 text-sm">Amigos</div>
+                  <div class="text-blue-400 text-xs">En festivales</div>
+                </div>
+                
+                <div class="text-center p-4 bg-purple-600/10 rounded-lg border border-purple-600/20">
+                  <div class="text-2xl font-bold text-purple-400">3</div>
+                  <div class="text-slate-400 text-sm">Países</div>
+                  <div class="text-purple-400 text-xs">Visitados</div>
+                </div>
+              </div>
+              
+              <div class="pt-4 border-t border-slate-700/50">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-400">Próximo festival:</span>
+                  <span class="text-green-400 font-semibold">Tomorrowland</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-400">En:</span>
+                  <span class="text-white font-semibold">45 días</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+
+    
+    
+    
+    <!-- Gallery Section -->
+    <section class="py-20 px-4">
+      <div class="max-w-6xl mx-auto text-center">
+        <h2 class="text-4xl md:text-6xl font-bold mb-16">
+          <span class="gradient-text">Revive los Momentos</span>
+        </h2>
+        <p class="text-xl text-slate-300 mb-12">
+          Galería de fotos y recuerdos épicos de festivales pasados
+        </p>
+        
+        <GalleryCarousel client:load />
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq-section" class="py-20 px-4 bg-slate-800/20">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
+            <span class="gradient-text">Preguntas Frecuentes</span>
+          </h2>
+          <p class="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
+            Resolvemos todas tus dudas sobre Festival&Friends
+          </p>
+        </div>
+
+        <FAQAccordion client:load />
+      </div>
+    </section>
+
+  </main>
+  
+  <Footer client:load />
+
+
+  
+
+</Layout> 

@@ -1,0 +1,148 @@
+---
+import { ClientRouter } from "astro:transitions";
+import SurveyPortalWrapper from "../components/SurveyPortalWrapper.jsx";
+
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Festival&Friends - La red social para rockeros y festivales" } = Astro.props;
+---
+
+
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    
+    <title>{title}</title>
+    <ClientRouter />
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+    
+    <SurveyPortalWrapper client:load />
+    
+    <style is:global>
+      @import "../styles/global.css";
+      
+      html {
+        scroll-behavior: smooth;
+      }
+      
+      body {
+        overflow-x: hidden;
+      }
+      
+      /* Custom animations */
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+      }
+      
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+      
+      /* Gradient backgrounds */
+      .gradient-bg {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+      }
+      
+      .gradient-text {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1d4ed8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      
+      /* Page transitions */
+      main {
+        transition: opacity 0.3s ease-in-out;
+      }
+      
+      /* Custom transition animations */
+      @keyframes slide-from-right {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes slide-to-left {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(-100%);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      
+      @keyframes fade-out {
+        from {
+          opacity: 1;
+          transform: scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+      }
+      
+      /* Smooth transitions for interactive elements */
+      a, button {
+        transition: all 0.2s ease-in-out;
+      }
+      
+      /* Header and footer transitions */
+      header, footer {
+        transition: opacity 0.3s ease-in-out;
+      }
+      
+      /* Content area transitions */
+      .content-area {
+        transition: opacity 0.4s ease-in-out;
+      }
+      
+      /* Page header transitions */
+      .page-header {
+        transition: all 0.3s ease-in-out;
+      }
+    </style>
+  </body>
+</html> 

@@ -1,0 +1,1079 @@
+import { useState, useEffect } from 'react';
+import { 
+  X, 
+  User, 
+  MapPin, 
+  Phone,
+  Link,
+  Heart,
+  Calendar,
+  Mail,
+  Music,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Bell,
+  Trophy
+} from 'lucide-react';
+import useStore from '../store/useStore.js';
+import { toast } from '../store/toastStore.js';
+import ConfirmationModal from './ConfirmationModal.jsx';
+import { supabase } from '../lib/supabase.js';
+
+const UserProfileModal = ({ user, isOpen, onClose }) => {
+  const { getUserAttendedEvents, deleteUser, user: currentUser } = useStore();
+  const [attendedEvents, setAttendedEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [showEventsList, setShowEventsList] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [userBadges, setUserBadges] = useState([]);
+  const [isLoadingBadges, setIsLoadingBadges] = useState(false);
+
+  // Cargar eventos asistidos cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && user) {
+      loadUserEvents();
+      loadUserBadges();
+    }
+  }, [isOpen, user]);
+
+  const loadUserEvents = async () => {
+    setIsLoadingEvents(true);
+    try {
+      const { data, error } = await getUserAttendedEvents(user.id);
+      if (!error && data) {
+        setAttendedEvents(data);
+      }
+    } catch (error) {
+      console.error('Error loading user events:', error);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  };
+
+  const loadUserBadges = async () => {
+    setIsLoadingBadges(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_badges')
+        .select(`*, badge_definitions(*)`)
+        .eq('user_id', user.id)
+        .order('awarded_at', { ascending: false });
+      
+      if (error) throw error;
+      setUserBadges(data || []);
+    } catch (err) {
+      console.error('Error loading user badges:', err);
+      setUserBadges([]);
+    } finally {
+      setIsLoadingBadges(false);
+    }
+  };
+
+  const handleToggleEventsList = () => {
+    setShowEventsList(!showEventsList);
+  };
+
+  if (!isOpen || !user) return null;
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Fecha no disponible';
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  };
+
+
+
+  // Check if current user can delete this user
+  const canDeleteUser = currentUser && (
+    user.id === currentUser.id || // User can delete themselves
+    currentUser.role === 'admin' // Admin can delete any user
+  );
+
+  const handleDeleteUser = () => {
+    setIsDeleteConfirmationOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    const result = await deleteUser(user.id);
+    
+    if (result.error) {
+      toast.error('Error', result.error.message || 'No se pudo eliminar el usuario');
+      console.error('Error deleting user:', result.error);
+    } else {
+      toast.success('¡Eliminado!', 'Usuario eliminado correctamente');
+      onClose(); // Close modal after successful deletion
+    }
+    
+    setIsDeleting(false);
+  };
+
+  // Contar eventos por estado
+  const eventsCount = attendedEvents.length;
+  const confirmedEvents = attendedEvents.filter(event => event.attendance_status === 'have_ticket').length;
+  const thinkingEvents = attendedEvents.filter(event => event.attendance_status === 'thinking_about_it').length;
+
+  return (
+    <div 
+      className="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" 
+      onClick={onClose}
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="user-profile-title"
+    >
+      <div 
+        className="bg-slate-900/95 backdrop-blur-lg border border-slate-600/70 sm:max-w-lg w-full max-h-[90vh] flex flex-col rounded-xl shadow-2xl modal-content" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
+          <h2 id="user-profile-title" className="text-xl font-bold text-white">
+            Perfil de {user.name}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800/50"
+            aria-label="Cerrar modal"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto flex-1 min-h-0 p-6">
+          <div className="space-y-6">
+            {/* User Header Section */}
+            <UserHeader user={user} formatDate={formatDate} />
+            
+            {/* 1. Biography Section */}
+            {user.bio && <BioSection bio={user.bio} />}
+            
+            {/* 2. Key Phrase Section */}
+            {user.key_phrase && <KeyPhraseSection keyPhrase={user.key_phrase} />}
+            
+            {/* 3. Contact Information (unified with social networks) */}
+            <ContactSection user={user} />
+            
+            {/* 4. Connection Info */}
+            {user.nexus_person && <ConnectionSection nexusPerson={user.nexus_person} />}
+            
+            {/* 5. Badges Section */}
+            <BadgesSection 
+              badges={userBadges}
+              isLoading={isLoadingBadges}
+            />
+            
+            {/* 6. Events Section */}
+            <EventsSection 
+              events={attendedEvents}
+              isLoading={isLoadingEvents}
+              showList={showEventsList}
+              onToggleList={handleToggleEventsList}
+              eventsCount={eventsCount}
+              confirmedEvents={confirmedEvents}
+              thinkingEvents={thinkingEvents}
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-slate-700/50">
+          <div className="flex space-x-3">
+            <button 
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium rounded-lg transition-colors border border-slate-600/50 hover:border-slate-500/50"
+            >
+              Cerrar
+            </button>
+            {canDeleteUser && (
+              <button 
+                onClick={handleDeleteUser}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors border border-red-500/50 hover:border-red-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="inline-block h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Delete confirmation modal */}
+      <ConfirmationModal
+        isOpen={isDeleteConfirmationOpen}
+        onClose={() => setIsDeleteConfirmationOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="🗑️ Eliminar Usuario"
+        message={`¿Estás seguro de que quieres eliminar ${user.id === currentUser?.id ? 'tu cuenta' : `a ${user.name}`}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmVariant="danger"
+      />
+    </div>
+  );
+};
+
+// Badges Section Component
+const BadgesSection = ({ badges, isLoading }) => {
+  const [selectedBadge, setSelectedBadge] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ vertical: 'bottom', horizontal: 'center' });
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Cerrar modal de insignia al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectedBadge && !event.target.closest('.badge-modal')) {
+        setSelectedBadge(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [selectedBadge]);
+
+  const handleBadgeClick = (badge, event) => {
+    if (isMobile) {
+      setSelectedBadge(badge);
+    } else {
+      // En desktop, calcular posición del tooltip considerando los límites del modal
+      const rect = event.currentTarget.getBoundingClientRect();
+      const modalContainer = event.currentTarget.closest('.modal-content');
+      const modalRect = modalContainer ? modalContainer.getBoundingClientRect() : null;
+      
+      if (modalRect) {
+        const spaceBelow = modalRect.bottom - rect.bottom;
+        const spaceAbove = rect.top - modalRect.top;
+        const spaceLeft = rect.left - modalRect.left;
+        const spaceRight = modalRect.right - rect.right;
+        
+        // Determinar posición vertical
+        const verticalPosition = spaceBelow > 120 ? 'bottom' : 'top';
+        
+        // Determinar posición horizontal
+        let horizontalPosition = 'center';
+        if (spaceLeft < 80) horizontalPosition = 'left';
+        else if (spaceRight < 80) horizontalPosition = 'right';
+        
+        setTooltipPosition({ vertical: verticalPosition, horizontal: horizontalPosition });
+      } else {
+        setTooltipPosition({ vertical: 'bottom', horizontal: 'center' });
+      }
+    }
+  };
+
+  const getTooltipClasses = (position) => {
+    const baseClasses = "pointer-events-none absolute z-10 opacity-0 group-hover/badge:opacity-100 group-focus/badge:opacity-100 transition-opacity duration-200 bg-slate-900 text-white text-xs rounded px-3 py-2 shadow-lg min-w-[160px] max-w-xs whitespace-normal";
+    
+    const { vertical, horizontal } = position;
+    
+    let positioningClasses = '';
+    
+    if (vertical === 'top') {
+      positioningClasses += ' bottom-full mb-2';
+    } else {
+      positioningClasses += ' top-full mt-2';
+    }
+    
+    if (horizontal === 'left') {
+      positioningClasses += ' left-0';
+    } else if (horizontal === 'right') {
+      positioningClasses += ' right-0';
+    } else {
+      positioningClasses += ' left-1/2 -translate-x-1/2';
+    }
+    
+    return `${baseClasses} ${positioningClasses}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+        <h4 className="text-base font-semibold text-white mb-3 flex items-center">
+          <Trophy className="w-5 h-5 mr-2 text-primary-400" />
+          Insignias
+        </h4>
+        <div className="flex items-center justify-center py-4">
+          <div className="animate-spin h-6 w-6 border-2 border-primary-600 border-t-transparent rounded-full"></div>
+          <span className="ml-2 text-slate-400 text-sm">Cargando insignias...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (badges.length === 0) {
+    return (
+      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+        <h4 className="text-base font-semibold text-white mb-3 flex items-center">
+          <Trophy className="w-5 h-5 mr-2 text-primary-400" />
+          Insignias
+        </h4>
+        <div className="text-center py-4">
+          <Trophy className="h-8 w-8 text-slate-500 mx-auto mb-2" />
+          <p className="text-slate-400 text-sm">Aún no tiene insignias</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+      <h4 className="text-base font-semibold text-white mb-3 flex items-center">
+        <Trophy className="w-5 h-5 mr-2 text-primary-400" />
+        Insignias
+        <span className="ml-2 text-xs text-primary-300">({badges.length})</span>
+      </h4>
+      <div className="flex flex-row gap-2">
+        {badges.slice(0, 3).map((badge) => {
+          const rarity = badge.badge_definitions?.rarity;
+          const dotColor =
+            rarity === 'legendary' ? 'bg-yellow-400' :
+            rarity === 'epic' ? 'bg-purple-400' :
+            rarity === 'rare' ? 'bg-blue-400' :
+            'bg-gray-400';
+          return (
+            <button
+              key={badge.id}
+              tabIndex={0}
+              aria-label={`${badge.badge_definitions?.name}: ${badge.badge_definitions?.description}`}
+              className="relative group/badge p-2 rounded-lg border bg-slate-700/60 hover:scale-110 focus:scale-110 transition-transform outline-none border-slate-600/50 min-w-[40px] min-h-[40px] flex items-center justify-center"
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleBadgeClick(badge, e);
+                }
+              }}
+              onClick={(e) => handleBadgeClick(badge, e)}
+              type="button"
+            >
+              <span className="text-xl" aria-hidden="true">{badge.badge_definitions?.icon}</span>
+              <span className="sr-only">{badge.badge_definitions?.name}</span>
+              <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${dotColor}`}></span>
+              
+              {/* Tooltip solo en desktop */}
+              {!isMobile && (
+                <div className={getTooltipClasses(tooltipPosition)}>
+                  <div className="font-bold mb-1">{badge.badge_definitions?.name}</div>
+                  <div>{badge.badge_definitions?.description}</div>
+                  <div className="mt-1 text-[10px] text-primary-400 capitalize">{badge.badge_definitions?.rarity}</div>
+                </div>
+              )}
+            </button>
+          );
+        })}
+        {badges.length > 3 && (
+          <div
+            tabIndex={0}
+            className="relative group/badge p-2 rounded-lg border bg-slate-700/60 text-xs text-slate-400 flex items-center justify-center min-w-[40px] min-h-[40px] border-slate-600/50 outline-none hover:scale-110 focus:scale-110 transition-transform"
+            onClick={() => !isMobile && setSelectedBadge({ type: 'additional', badges: badges.slice(3) })}
+            onKeyDown={e => {
+              if (!isMobile && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                setSelectedBadge({ type: 'additional', badges: badges.slice(3) });
+              }
+            }}
+          >
+            +{badges.length - 3}
+            {/* Tooltip solo en desktop */}
+            {!isMobile && (
+              <div className="pointer-events-none absolute z-10 left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/badge:opacity-100 group-focus/badge:opacity-100 transition-opacity duration-200 bg-slate-900 text-white text-xs rounded px-3 py-2 shadow-lg max-w-xs min-w-[160px] whitespace-normal">
+                <div className="font-bold mb-1">Insignias adicionales</div>
+                {badges.slice(3).map(b => (
+                  <div key={b.id} className="flex items-center gap-1 mb-1 last:mb-0">
+                    <span className="text-base">{b.badge_definitions?.icon}</span>
+                    <span>{b.badge_definitions?.name}</span>
+                    <span className="ml-1 text-[10px] text-primary-400 capitalize">{b.badge_definitions?.rarity}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modal de insignia para móvil */}
+      {isMobile && selectedBadge && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[90] p-4 badge-modal">
+          <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            {selectedBadge.type === 'additional' ? (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-white">Insignias adicionales</h3>
+                  <button
+                    onClick={() => setSelectedBadge(null)}
+                    className="text-slate-400 hover:text-white transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {selectedBadge.badges.map(badge => (
+                    <div key={badge.id} className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg">
+                      <span className="text-2xl">{badge.badge_definitions?.icon}</span>
+                      <div className="flex-1">
+                        <div className="font-semibold text-white">{badge.badge_definitions?.name}</div>
+                        <div className="text-sm text-slate-300">{badge.badge_definitions?.description}</div>
+                        <div className="text-xs text-primary-400 capitalize mt-1">{badge.badge_definitions?.rarity}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-white">{selectedBadge.badge_definitions?.name}</h3>
+                  <button
+                    onClick={() => setSelectedBadge(null)}
+                    className="text-slate-400 hover:text-white transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="text-center mb-4">
+                  <div className="text-4xl mb-3">{selectedBadge.badge_definitions?.icon}</div>
+                  <p className="text-slate-300 mb-2">{selectedBadge.badge_definitions?.description}</p>
+                  <div className="text-sm text-primary-400 capitalize">{selectedBadge.badge_definitions?.rarity}</div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// User Header Component
+const UserHeader = ({ user, formatDate }) => (
+  <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+    {/* Avatar */}
+    <div className="flex-shrink-0">
+      {user.avatar_url ? (
+        <img
+          src={user.avatar_url}
+          alt={`Avatar de ${user.name}`}
+          className="w-20 h-20 rounded-full object-cover border-2 border-primary-500/50 shadow-lg"
+        />
+      ) : (
+        <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center shadow-lg border-2 border-primary-500/50">
+          <User className="h-10 w-10 text-white" />
+        </div>
+      )}
+    </div>
+    
+    {/* User Info */}
+    <div className="flex-1 text-center sm:text-left">
+      <h3 className="text-xl font-bold text-white mb-2">
+        {user.name}
+      </h3>
+      
+      {user.nickname && (
+        <p className="text-primary-400 text-base font-medium mb-2">
+          @{user.nickname}
+        </p>
+      )}
+
+      {user.city && (
+        <div className="flex items-center justify-center sm:justify-start space-x-2 text-slate-300 mb-2">
+          <MapPin className="h-4 w-4" />
+          <span className="text-sm">{user.city}</span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center sm:justify-start space-x-2 text-slate-500 text-xs">
+        <Calendar className="h-3 w-3" />
+        <span>Miembro desde {formatDate(user.created_at)}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// Biography Section Component
+const BioSection = ({ bio }) => (
+  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+    <h4 className="text-base font-semibold text-white mb-3 flex items-center">
+      <span className="mr-2">🎸</span>
+      Biografía
+    </h4>
+    <p className="text-slate-300 leading-relaxed text-sm">
+      {bio}
+    </p>
+  </div>
+);
+
+// Key Phrase Section Component
+const KeyPhraseSection = ({ keyPhrase }) => (
+  <div className="bg-primary-500/10 rounded-lg p-4 border border-primary-500/20">
+    <h4 className="text-base font-semibold text-primary-300 mb-3 flex items-center">
+      <span className="mr-2">💭</span>
+      La frase estelar
+    </h4>
+    <p className="text-primary-200 italic text-base text-center">
+      "{keyPhrase}"
+    </p>
+  </div>
+);
+
+// Contact Section Component
+const ContactSection = ({ user }) => {
+  const hasContactInfo = user.phone || user.instagram_url || user.twitter_url;
+  
+  if (!hasContactInfo) return null;
+
+  return (
+    <div className="space-y-4">
+      {/* Phone Contact */}
+      {user.phone && (
+        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+          <h4 className="text-base font-semibold text-white mb-3 flex items-center">
+            <span className="mr-2">📱</span>
+            Contacto
+          </h4>
+          <div className="space-y-3">
+            {/* Phone Number */}
+            <div className="flex items-center space-x-2 text-slate-300">
+              <Phone className="h-4 w-4" />
+              <span className="text-sm">{user.phone}</span>
+            </div>
+            
+            {/* WhatsApp Link */}
+            <a
+              href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-3 p-3 bg-gradient-to-r from-green-500/10 to-green-600/10 hover:from-green-500/20 hover:to-green-600/20 text-slate-300 hover:text-green-400 transition-all duration-300 rounded-lg border border-green-500/20 hover:border-green-500/40 group"
+              aria-label="Contactar por WhatsApp"
+            >
+              <div className="w-5 h-5 group-hover:scale-110 transition-transform">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                </svg>
+              </div>
+              <div>
+                <div className="font-medium text-sm">WhatsApp</div>
+                <div className="text-xs text-slate-400 group-hover:text-green-300">Enviar mensaje</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Social Networks */}
+      {(user.instagram_url || user.twitter_url) && (
+        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+          <h4 className="text-base font-semibold text-white mb-3 flex items-center">
+            <span className="mr-2">📲</span>
+            Redes Sociales
+          </h4>
+          <div className="space-y-3">
+            {user.instagram_url && (
+              <SocialLink
+                url={user.instagram_url}
+                platform="Instagram"
+                description="Sígueme en Instagram"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                }
+                hoverColor="pink"
+              />
+            )}
+            
+            {user.twitter_url && (
+              <SocialLink
+                url={user.twitter_url}
+                platform="X (Twitter)"
+                description="Sígueme en X"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                }
+                hoverColor="black"
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Social Link Component
+const SocialLink = ({ url, platform, description, icon, hoverColor }) => {
+  const getHoverClasses = (color) => {
+    const classes = {
+      pink: "hover:from-pink-500/20 hover:to-purple-500/20 hover:text-pink-400 hover:border-pink-500/40",
+      black: "hover:from-black/20 hover:to-gray-500/20 hover:text-black hover:border-black/40"
+    };
+    return classes[color] || classes.pink;
+  };
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center space-x-3 p-3 bg-gradient-to-r from-slate-700/50 to-slate-600/50 ${getHoverClasses(hoverColor)} text-slate-300 transition-all duration-300 rounded-lg border border-slate-600/50 group`}
+      aria-label={`Visitar ${platform}`}
+    >
+      <div className="w-5 h-5 group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <div>
+        <div className="font-medium text-sm">{platform}</div>
+        <div className="text-xs text-slate-400 group-hover:text-slate-300">{description}</div>
+      </div>
+    </a>
+  );
+};
+
+// Connection Section Component
+const ConnectionSection = ({ nexusPerson }) => (
+  <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
+    <h4 className="text-base font-semibold text-purple-300 mb-3 flex items-center">
+      <span className="mr-2">🔗</span>
+      Persona Nexo
+    </h4>
+    <div className="flex items-center space-x-3">
+      <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
+        <User className="h-4 w-4 text-purple-300" />
+      </div>
+      <div>
+        <p className="text-purple-200 text-sm">
+          Conectado a través de:
+        </p>
+        <p className="text-purple-100 font-semibold text-base">
+          {nexusPerson}
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+// Events Section Component
+const EventsSection = ({ events, isLoading, showList, onToggleList, eventsCount, confirmedEvents, thinkingEvents }) => {
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
+
+  // Clasificar eventos por estado temporal
+  const now = new Date();
+  const pastEvents = events.filter(event => new Date(event.festival_end_date) < now);
+  const futureEvents = events.filter(event => new Date(event.festival_start_date) >= now);
+  const ongoingEvents = events.filter(event => {
+    const start = new Date(event.festival_start_date);
+    const end = new Date(event.festival_end_date);
+    return start <= now && end >= now;
+  });
+
+  // Filtrar eventos según el filtro activo
+  const getFilteredEvents = () => {
+    switch (activeFilter) {
+      case 'past':
+        return pastEvents;
+      case 'future':
+        return futureEvents;
+      case 'ongoing':
+        return ongoingEvents;
+      default:
+        return events;
+    }
+  };
+
+  // Ordenar eventos
+  const getSortedEvents = (eventList) => {
+    return [...eventList].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.festival_name.localeCompare(b.festival_name);
+        case 'status':
+          return a.attendance_status.localeCompare(b.attendance_status);
+        default:
+          return new Date(b.festival_start_date) - new Date(a.festival_start_date);
+      }
+    });
+  };
+
+  const filteredAndSortedEvents = getSortedEvents(getFilteredEvents());
+
+  // Calcular estadísticas para gráfico
+  const getStatusStats = () => {
+    const stats = {
+      have_ticket: 0,
+      thinking_about_it: 0,
+      not_going: 0
+    };
+    
+    events.forEach(event => {
+      stats[event.attendance_status] = (stats[event.attendance_status] || 0) + 1;
+    });
+    
+    return stats;
+  };
+
+  const statusStats = getStatusStats();
+  const totalEvents = events.length;
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'have_ticket':
+        return 'text-green-400 bg-green-500/10 border-green-500/20';
+      case 'thinking_about_it':
+        return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
+      case 'not_going':
+        return 'text-red-400 bg-red-500/10 border-red-500/20';
+      default:
+        return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'have_ticket':
+        return 'Tiene entrada';
+      case 'thinking_about_it':
+        return 'Pensándolo';
+      case 'not_going':
+        return 'No va';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  const getEventStatus = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const now = new Date();
+    
+    if (end < now) return 'past';
+    if (start > now) return 'future';
+    return 'ongoing';
+  };
+
+  const getEventStatusColor = (status) => {
+    switch (status) {
+      case 'past':
+        return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
+      case 'ongoing':
+        return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+      case 'future':
+        return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
+      default:
+        return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
+    }
+  };
+
+  const getEventStatusText = (status) => {
+    switch (status) {
+      case 'past':
+        return 'Finalizado';
+      case 'ongoing':
+        return 'En curso';
+      case 'future':
+        return 'Próximo';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  const formatEventDate = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (start.toDateString() === end.toDateString()) {
+      return start.toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } else {
+      return `${start.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    }
+  };
+
+  const formatMonthYear = (dateString) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  return (
+    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-base font-semibold text-white flex items-center">
+          <span className="mr-2">🎫</span>
+          Actividad
+        </h4>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-slate-400">
+            {eventsCount} evento{eventsCount !== 1 ? 's' : ''}
+          </span>
+          {eventsCount > 0 && (
+            <button
+              onClick={onToggleList}
+              className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-700/50"
+              aria-label={showList ? 'Ocultar lista de eventos' : 'Mostrar lista de eventos'}
+            >
+              {showList ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Loading state */}
+      {isLoading && (
+        <div className="text-center py-4">
+          <div className="animate-spin h-6 w-6 border-2 border-primary-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p className="text-slate-400 text-sm">Cargando eventos...</p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && eventsCount === 0 && (
+        <div className="text-center py-4">
+          <Music className="h-8 w-8 text-slate-500 mx-auto mb-2" />
+          <p className="text-slate-400 text-sm">Aún no ha asistido a eventos</p>
+        </div>
+      )}
+
+      {/* Enhanced Events summary with charts */}
+      {!isLoading && eventsCount > 0 && (
+        <div className="space-y-4 mb-4">
+          {/* Status Distribution Chart */}
+          <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/30">
+            <h5 className="text-sm font-semibold text-white mb-3">Distribución de Estados</h5>
+            <div className="space-y-2">
+              {Object.entries(statusStats).map(([status, count]) => {
+                const percentage = totalEvents > 0 ? Math.round((count / totalEvents) * 100) : 0;
+                const color = status === 'have_ticket' ? 'bg-green-500' : 
+                             status === 'thinking_about_it' ? 'bg-yellow-500' : 'bg-red-500';
+                
+                return (
+                  <div key={status} className="flex items-center space-x-3">
+                    <div className="flex-1">
+                      <div className="flex justify-between text-xs text-slate-300 mb-1">
+                        <span>{getStatusText(status)}</span>
+                        <span>{count} ({percentage}%)</span>
+                      </div>
+                      <div className="w-full bg-slate-600 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-500 ${color}`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Timeline Summary */}
+          <div className="grid grid-cols-3 gap-3">
+            {pastEvents.length > 0 && (
+              <div className="bg-slate-500/10 rounded-lg p-3 border border-slate-500/20">
+                <div className="text-slate-400 text-lg font-bold">{pastEvents.length}</div>
+                <div className="text-slate-300 text-xs">Finalizados</div>
+              </div>
+            )}
+            {ongoingEvents.length > 0 && (
+              <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
+                <div className="text-blue-400 text-lg font-bold">{ongoingEvents.length}</div>
+                <div className="text-blue-300 text-xs">En curso</div>
+              </div>
+            )}
+            {futureEvents.length > 0 && (
+              <div className="bg-purple-500/10 rounded-lg p-3 border border-purple-500/20">
+                <div className="text-purple-400 text-lg font-bold">{futureEvents.length}</div>
+                <div className="text-purple-300 text-xs">Próximos</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Events list with filters */}
+      {!isLoading && eventsCount > 0 && showList && (
+        <div className="space-y-4 border-t border-slate-700/50 pt-4">
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveFilter('all')}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                activeFilter === 'all' 
+                  ? 'bg-primary-500 text-white' 
+                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+              }`}
+            >
+              Todos ({events.length})
+            </button>
+            {pastEvents.length > 0 && (
+              <button
+                onClick={() => setActiveFilter('past')}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  activeFilter === 'past' 
+                    ? 'bg-slate-500 text-white' 
+                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                }`}
+              >
+                Finalizados ({pastEvents.length})
+              </button>
+            )}
+            {ongoingEvents.length > 0 && (
+              <button
+                onClick={() => setActiveFilter('ongoing')}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  activeFilter === 'ongoing' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                }`}
+              >
+                En curso ({ongoingEvents.length})
+              </button>
+            )}
+            {futureEvents.length > 0 && (
+              <button
+                onClick={() => setActiveFilter('future')}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  activeFilter === 'future' 
+                    ? 'bg-purple-500 text-white' 
+                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                }`}
+              >
+                Próximos ({futureEvents.length})
+              </button>
+            )}
+          </div>
+
+          {/* Sort options */}
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-slate-400">Ordenar por:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-slate-700/50 border border-slate-600/50 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-primary-500"
+            >
+              <option value="date">Fecha</option>
+              <option value="name">Nombre</option>
+              <option value="status">Estado</option>
+            </select>
+          </div>
+
+          {/* Timeline Events */}
+          <div className="space-y-3">
+            {filteredAndSortedEvents.map((event, index) => {
+              const eventStatus = getEventStatus(event.festival_start_date, event.festival_end_date);
+              const isLast = index === filteredAndSortedEvents.length - 1;
+              
+              return (
+                <div key={event.festival_id} className="relative">
+                  {/* Timeline line */}
+                  {!isLast && (
+                    <div className="absolute left-6 top-12 w-0.5 h-8 bg-slate-600/50"></div>
+                  )}
+                  
+                  <div className="bg-slate-700/30 rounded-lg p-3 border border-slate-600/30 hover:bg-slate-700/50 transition-colors">
+                    <div className="flex items-start space-x-3">
+                      {/* Timeline dot */}
+                      <div className={`flex-shrink-0 w-3 h-3 rounded-full mt-1 ${
+                        eventStatus === 'past' ? 'bg-slate-400' :
+                        eventStatus === 'ongoing' ? 'bg-blue-400' :
+                        'bg-purple-400'
+                      }`}></div>
+                      
+                      {/* Event poster or icon */}
+                      <div className="flex-shrink-0">
+                        {event.festival_poster_url ? (
+                          <img
+                            src={event.festival_poster_url}
+                            alt={`Poster de ${event.festival_name}`}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
+                            <Music className="h-6 w-6 text-white" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Event details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h5 className="text-sm font-semibold text-white truncate">
+                              {event.festival_name}
+                            </h5>
+                            <div className="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="truncate">{event.festival_location}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-slate-400 mb-2">
+                              <Calendar className="h-3 w-3" />
+                              <span>{formatEventDate(event.festival_start_date, event.festival_end_date)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Status badges */}
+                          <div className="flex flex-col items-end space-y-1">
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getEventStatusColor(eventStatus)}`}>
+                              <span className="w-2 h-2 rounded-full mr-1.5 bg-current"></span>
+                              {getEventStatusText(eventStatus)}
+                            </div>
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.attendance_status)}`}>
+                              <span className="w-2 h-2 rounded-full mr-1.5 bg-current"></span>
+                              {getStatusText(event.attendance_status)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        {event.attendance_notes && (
+                          <div className="mt-2 pt-2 border-t border-slate-600/30">
+                            <p className="text-xs text-slate-300 italic">
+                              "{event.attendance_notes}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UserProfileModal; 
