@@ -286,11 +286,11 @@ const Header = () => {
                         <img 
                           src={userProfile.avatar_url} 
                           alt={userProfile.name} 
-                          className="h-8 w-8 rounded-full object-cover border-2 border-primary-500 group-hover:border-primary-400 transition-colors"
+                          className="h-12 w-12 rounded-full object-cover border-2 border-primary-500 group-hover:border-primary-400 transition-colors"
                         />
                       ) : (
-                        <div className="h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center group-hover:bg-primary-500 transition-colors">
-                          <User className="h-5 w-5 text-white" />
+                        <div className="h-12 w-12 bg-primary-600 rounded-full flex items-center justify-center group-hover:bg-primary-500 transition-colors">
+                          <User className="h-6 w-6 text-white" />
                         </div>
                       )}
                       
@@ -383,11 +383,11 @@ const Header = () => {
                     <img 
                       src={userProfile.avatar_url} 
                       alt={userProfile.name} 
-                      className="h-12 w-12 rounded-full object-cover border-2 border-primary-500"
+                      className="h-16 w-16 rounded-full object-cover border-2 border-primary-500"
                     />
                   ) : (
-                    <div className="h-12 w-12 bg-primary-600 rounded-full flex items-center justify-center">
-                      <User className="h-6 w-6 text-white" />
+                    <div className="h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
+                      <User className="h-8 w-8 text-white" />
                     </div>
                   )}
                   

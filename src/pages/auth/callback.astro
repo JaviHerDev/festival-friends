@@ -1,0 +1,33 @@
+---
+// Auth callback page for Supabase email confirmations
+import { supabase } from '../../lib/supabase.js';
+
+// Get the session from the URL
+const { data: { session }, error } = await supabase.auth.getSession();
+
+// Redirect based on authentication status
+if (session?.user) {
+  // User is authenticated, redirect to home
+  return Astro.redirect('/');
+} else {
+  // No session, redirect to login
+  return Astro.redirect('/?error=auth_failed');
+}
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirmando cuenta - Festival&Friends</title>
+  </head>
+  <body>
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+        <h1 class="text-2xl font-bold text-white mb-2">Confirmando tu cuenta...</h1>
+        <p class="text-slate-400">Por favor espera mientras procesamos tu confirmación.</p>
+      </div>
+    </div>
+  </body>
+</html> 

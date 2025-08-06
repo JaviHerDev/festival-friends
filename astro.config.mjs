@@ -9,5 +9,5 @@ export default defineConfig({
     tailwind()
   ],
   output: 'static',
-  site: 'https://festival-friends.netlify.app'
+  site: 'https://festival-friends-liard.vercel.app/'
 }); 

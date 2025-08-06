@@ -175,7 +175,7 @@ const Footer = ({ showDemo = false }) => {
                   <div className="flex justify-center gap-4 text-sm text-white font-medium">
                     <div className="flex items-center space-x-1">
                       <span>🥃</span>
-                      <span>Chatea con otros miembroshisky</span>
+                      <span>Dale Whisky</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <span>💊</span>

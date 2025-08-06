@@ -170,7 +170,7 @@ const NexusPersonModal = ({ isOpen, onClose, onSkip }) => {
             <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
               <p className="text-blue-200 text-sm">
                 💡 <strong>¿Por qué conectar?</strong> Esto nos ayuda a crear el árbol de conexiones 
-                y ver cómo se expande nuestra familia rockera.
+                y ver cómo se expande nuestra familia festivalera.
               </p>
             </div>
           </div>

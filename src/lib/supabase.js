@@ -3,7 +3,24 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || 'https://mvlrmnxatfpfjnrwzukz.supabase.co';
 const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bHJtbnhhdGZwZmpucnd6dWt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzMzU0NjAsImV4cCI6MjA2OTkxMTQ2MH0.MEs9gh4YMEZq-NyEn0Xla5ckyhDzFuS7E1BJdFsDtTI';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Configuración para URLs de redirección
+const getRedirectUrl = () => {
+  // En desarrollo, usar localhost
+  if (import.meta.env.DEV) {
+    return 'http://localhost:4322';
+  }
+  
+  // En producción, usar la URL del sitio configurada en astro.config.mjs
+  return 'https://festival-friends-liard.vercel.app/';
+};
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 
 // Test de conexión básico
 export const testConnection = async () => {
@@ -40,6 +57,9 @@ export const signUp = async (email, password, userData) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${getRedirectUrl()}/auth/callback`
+      }
     });
     
     if (error) {
