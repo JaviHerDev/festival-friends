@@ -16,18 +16,17 @@ import { toast } from '../store/toastStore.js';
 import LoginModal from './LoginModal.jsx';
 import NotificationPanel from './NotificationPanel.jsx';
 import ProfileModal from './ProfileModal.jsx';
-import NexusPersonModal from './NexusPersonModal.jsx';
+
 import ToastContainer from './ToastContainer.jsx';
 import { signOut } from '../lib/supabase.js';
+import UserAvatar from './UserAvatar.jsx';
 
 const Header = () => {
-  const { user, userProfile, isLoginModalOpen, setLoginModalOpen, unreadNotifications, logout, initializeAuth, setupAuthListener, cleanupAuthListener } = useStore();
+  const { user, userProfile, isLoginModalOpen, setLoginModalOpen, isProfileModalOpen, setProfileModalOpen, unreadNotifications, logout, initializeAuth, setupAuthListener, cleanupAuthListener } = useStore();
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isNexusModalOpen, setIsNexusModalOpen] = useState(false);
-  const [hasShownNexusModal, setHasShownNexusModal] = useState(false);
+
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get current path for active menu highlighting
@@ -106,21 +105,7 @@ const Header = () => {
     };
   }, []);
 
-  // Check if user needs to set nexus person
-  useEffect(() => {
-    if (user && userProfile && !hasShownNexusModal) {
-      // Check if user doesn't have nexus_person set
-      if (!userProfile.nexus_person) {
-        // Show modal after a short delay to let the app load
-        const timer = setTimeout(() => {
-          setIsNexusModalOpen(true);
-          setHasShownNexusModal(true);
-        }, 2000);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [user, userProfile, hasShownNexusModal]);
+  // Removed forced nexus person modal - users can set it from their profile
 
   const handleSignOut = async () => {
     await signOut();
@@ -131,7 +116,7 @@ const Header = () => {
   };
 
   const handleOpenProfile = () => {
-    setIsProfileModalOpen(true);
+    setProfileModalOpen(true);
     setIsUserMenuOpen(false);
     setIsMobileMenuOpen(false); // Cerrar menú móvil también
   };
@@ -158,14 +143,7 @@ const Header = () => {
     return currentPath.startsWith(href);
   };
 
-  // Handle nexus modal
-  const handleNexusModalClose = () => {
-    setIsNexusModalOpen(false);
-  };
 
-  const handleNexusModalSkip = () => {
-    toast.info('No hay problema', 'Puedes añadir tu conexión más tarde desde tu perfil.');
-  };
 
   // Skeleton loader while initializing
   if (!isInitialized) {
@@ -282,17 +260,11 @@ const Header = () => {
                       onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                       className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-800/50 transition-all duration-200 group"
                     >
-                      {userProfile?.avatar_url ? (
-                        <img 
-                          src={userProfile.avatar_url} 
-                          alt={userProfile.name} 
-                          className="h-12 w-12 rounded-full object-cover border-2 border-primary-500 group-hover:border-primary-400 transition-colors"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 bg-primary-600 rounded-full flex items-center justify-center group-hover:bg-primary-500 transition-colors">
-                          <User className="h-6 w-6 text-white" />
-                        </div>
-                      )}
+                      <UserAvatar 
+                        user={userProfile} 
+                        size="lg" 
+                        className="group-hover:bg-primary-500 transition-colors"
+                      />
                       
                       <div className="text-left">
                         <div className="text-sm font-medium text-white line-clamp-1 group-hover:text-primary-300 transition-colors">
@@ -379,17 +351,10 @@ const Header = () => {
               <div className="px-4 py-6 space-y-6">
                 {/* User Profile Section */}
                 <div className="flex items-center space-x-3 pb-6 border-b border-slate-700/50">
-                  {userProfile?.avatar_url ? (
-                    <img 
-                      src={userProfile.avatar_url} 
-                      alt={userProfile.name} 
-                      className="h-16 w-16 rounded-full object-cover border-2 border-primary-500"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
-                      <User className="h-8 w-8 text-white" />
-                    </div>
-                  )}
+                  <UserAvatar 
+                    user={userProfile} 
+                    size="2xl" 
+                  />
                   
                   <div className="flex-1 min-w-0">
                     <div className="text-base font-medium text-white truncate">
@@ -480,13 +445,9 @@ const Header = () => {
       )}
       <ProfileModal 
         isOpen={isProfileModalOpen} 
-        onClose={() => setIsProfileModalOpen(false)} 
+        onClose={() => setProfileModalOpen(false)} 
       />
-      <NexusPersonModal 
-        isOpen={isNexusModalOpen}
-        onClose={handleNexusModalClose}
-        onSkip={handleNexusModalSkip}
-      />
+
       <ToastContainer />
     </>
   );

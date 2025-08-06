@@ -19,6 +19,14 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
     }
   }, [isOpen, event?.id]);
 
+  // Asegurar que las insignias se carguen cuando se abre la encuesta
+  useEffect(() => {
+    if (isOpen && badgeDefinitions.length === 0) {
+      console.log('🔄 Loading badge definitions for survey...');
+      loadBadgeDefinitions();
+    }
+  }, [isOpen, badgeDefinitions.length]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -34,28 +42,59 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
       }
       
       // Load badge definitions
-      await loadBadgeDefinitions();
+      const { data: badgeData, error: badgeError } = await loadBadgeDefinitions();
+      console.log('🔍 Badge definitions loaded:', badgeData?.length || 0, 'badges');
+      if (badgeError) {
+        console.error('❌ Error loading badge definitions:', badgeError);
+      }
+      if (badgeData && badgeData.length > 0) {
+        console.log('📋 Available badges:', badgeData.map(b => ({ name: b.name, key: b.badge_key, active: b.is_active })));
+      }
       
-      // Get the latest festival data with attendances directly from database
-      const { data: festivalData, error: festivalError } = await supabase
-        .from('festivals')
+      // Obtener las asistencias del festival directamente
+      console.log('🔍 Loading attendances for festival:', event.id, event.name);
+      
+      const { data: attendancesData, error: attendancesError } = await supabase
+        .from('festival_attendances')
         .select(`
-          *,
-          attendances:festival_attendances(
-            user_id,
-            status,
-            user:users(name, nickname, avatar_url)
-          )
+          user_id,
+          status,
+          user:users(id, name, nickname, avatar_url, city)
         `)
-        .eq('id', event.id)
-        .single();
+        .eq('festival_id', event.id);
       
-      if (festivalError) {
-        console.error('Error loading festival data:', festivalError);
+      if (attendancesError) {
+        console.error('❌ Error loading attendances:', attendancesError);
         return;
       }
       
-      const festivalWithAttendances = festivalData || event;
+      console.log('🎪 Attendances loaded:', attendancesData?.length || 0, 'attendances');
+      if (attendancesData && attendancesData.length > 0) {
+        console.log('📋 Attendance details:');
+        attendancesData.forEach(att => {
+          console.log(`  - User: ${att.user?.name || 'Unknown'} (${att.user_id}), Status: ${att.status}`);
+        });
+      } else {
+        console.log('⚠️ No attendances found for this festival');
+      }
+      
+      const festivalWithAttendances = {
+        ...event,
+        attendances: attendancesData || []
+      };
+      
+      console.log('🎪 Festival data loaded:', {
+        name: festivalWithAttendances.name,
+        id: festivalWithAttendances.id,
+        attendancesCount: festivalWithAttendances.attendances?.length || 0
+      });
+      
+      if (festivalWithAttendances.attendances && festivalWithAttendances.attendances.length > 0) {
+        console.log('📋 Attendance details:');
+        festivalWithAttendances.attendances.forEach(att => {
+          console.log(`  - User ID: ${att.user_id}, Status: ${att.status}, User: ${att.user?.name || 'Unknown'}`);
+        });
+      }
       
       // Verify festival has attendances
       if (!festivalWithAttendances.attendances || festivalWithAttendances.attendances.length === 0) {
@@ -64,23 +103,30 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
         return;
       }
       
-      // Get event participants (users who attended the event)
-      console.log('Users in store:', users.length);
-      console.log('Attendances in festival:', festivalWithAttendances.attendances.length);
+      // Get event participants directly from attendances data
+      console.log('🎪 Attendances in festival:', festivalWithAttendances.attendances.length);
+      console.log('📋 Raw attendances data:', festivalWithAttendances.attendances);
       
-      const attendees = users.filter(user => {
-        const hasAttendance = festivalWithAttendances.attendances?.some(attendance => 
-          attendance.user_id === user.id && 
-          ['have_ticket', 'thinking_about_it'].includes(attendance.status)
-        );
-        if (hasAttendance) {
-          console.log(`User ${user.name} (${user.id}) has attendance`);
-        }
-        return hasAttendance;
-      });
+      const attendees = festivalWithAttendances.attendances
+        .filter(attendance => {
+          const hasUser = !!attendance.user;
+          if (!hasUser) {
+            console.log('❌ Attendance without user data:', attendance);
+          }
+          return hasUser;
+        })
+        .map(attendance => {
+          console.log('✅ Processing user:', attendance.user);
+          return attendance.user;
+        });
       
-      console.log('Event participants found:', attendees.length);
-      console.log('Participants:', attendees.map(u => ({ id: u.id, name: u.name, nickname: u.nickname })));
+      console.log('✅ Event participants found:', attendees.length);
+      console.log('👥 Participants:', attendees.map(u => ({ 
+        id: u.id, 
+        name: u.name, 
+        nickname: u.nickname, 
+        status: festivalWithAttendances.attendances.find(a => a.user_id === u.id)?.status 
+      })));
       
       setEventParticipants(attendees);
     } catch (error) {
@@ -144,35 +190,63 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
 
   // Badge questions that appear after survey questions
   const getBadgeQuestions = () => {
-    if (!badgeDefinitions || badgeDefinitions.length === 0) return [];
+    console.log('🔍 Getting badge questions. Badge definitions:', badgeDefinitions?.length || 0);
     
-    // Filter out "Padrino de Wacho" badge as it's automatic and only show active badges
+    if (!badgeDefinitions || badgeDefinitions.length === 0) {
+      console.log('❌ No badge definitions available');
+      return [];
+    }
+    
+    console.log('📋 All badge definitions:', badgeDefinitions.map(b => ({ 
+      name: b.name, 
+      key: b.badge_key, 
+      active: b.is_active,
+      id: b.id 
+    })));
+    
+    // Filter out only app_creator and wacho_patron badges
     const assignableBadges = badgeDefinitions.filter(badge => {
       const isWachoPatron = badge.badge_key === 'wacho_patron';
-      const isActive = badge.is_active !== false; // Default to true if not specified
+      const isAppCreator = badge.badge_key === 'app_creator';
       
       if (isWachoPatron) {
-        console.log('Excluding badge:', badge.name, 'with key:', badge.badge_key);
+        console.log('🚫 Excluding badge:', badge.name, 'with key:', badge.badge_key);
       }
-      if (!isActive) {
-        console.log('Excluding inactive badge:', badge.name);
+      if (isAppCreator) {
+        console.log('🚫 Excluding badge:', badge.name, 'with key:', badge.badge_key);
       }
       
-      return !isWachoPatron && isActive;
+      const isAssignable = !isWachoPatron && !isAppCreator;
+      console.log(`✅ Badge "${badge.name}" is assignable:`, isAssignable);
+      
+      return isAssignable;
     });
     
-    console.log('Assignable badges:', assignableBadges.map(b => b.name));
+    console.log('🏆 All assignable badges:', assignableBadges.map(b => b.name));
+    console.log('📝 Total assignable badges:', assignableBadges.length);
     
-    return assignableBadges.slice(0, 6).map(badge => ({
+    // Shuffle the badges and take 8 random ones
+    const shuffledBadges = [...assignableBadges].sort(() => Math.random() - 0.5);
+    const randomBadges = shuffledBadges.slice(0, 8);
+    
+    console.log('🎲 Random badges selected:', randomBadges.map(b => b.name));
+    
+    const badgeQuestions = randomBadges.map(badge => ({
       id: `badge_${badge.id}`,
       question: `¿Quién merece la insignia "${badge.name}"?`,
       type: 'badge',
       badge: badge,
       description: badge.description
     }));
+    
+    console.log('❓ Badge questions created:', badgeQuestions.length);
+    return badgeQuestions;
   };
 
-  const allQuestions = [...surveyQuestions, ...getBadgeQuestions()];
+  const badgeQuestions = getBadgeQuestions();
+  const allQuestions = [...surveyQuestions, ...badgeQuestions];
+  console.log('📊 Total questions:', allQuestions.length, 'Survey questions:', surveyQuestions.length, 'Badge questions:', badgeQuestions.length);
+  console.log('🏆 Badge questions details:', badgeQuestions.map(q => ({ id: q.id, question: q.question, badge: q.badge?.name })));
 
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({
@@ -283,17 +357,27 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
         );
 
       case 'badge':
-        // Filter participants based on search
+        console.log('🎯 Rendering badge question:', question.badge?.name);
+        console.log('👥 Event participants:', eventParticipants.length);
+        console.log('📋 Event participants data:', eventParticipants);
+        console.log('🔍 Search term:', participantSearch);
+        
         const filteredParticipants = eventParticipants.filter(participant => {
           const searchTerm = participantSearch.toLowerCase();
           const name = (participant.name || '').toLowerCase();
           const nickname = (participant.nickname || '').toLowerCase();
           const city = (participant.city || '').toLowerCase();
           
-          return name.includes(searchTerm) || 
+          const matches = name.includes(searchTerm) || 
                  nickname.includes(searchTerm) || 
                  city.includes(searchTerm);
+          
+          console.log(`🔍 User ${participant.name}: matches="${matches}" (name:${name.includes(searchTerm)}, nick:${nickname.includes(searchTerm)}, city:${city.includes(searchTerm)})`);
+          
+          return matches;
         });
+        
+        console.log('🔍 Filtered participants:', filteredParticipants.length);
 
         return (
           <div className="space-y-3 sm:space-y-4">
@@ -356,18 +440,33 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
                         : 'border-slate-600 hover:border-slate-500'
                     }`}
                   >
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs sm:text-sm text-white font-semibold">
-                        {(participant.name || participant.nickname || 'U').charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                    {participant.avatar_url ? (
+                      <img
+                        src={participant.avatar_url}
+                        alt={participant.name}
+                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover flex-shrink-0 border-2 border-primary-500/30"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs sm:text-sm text-white font-semibold">
+                          {(participant.name || participant.nickname || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div className="text-left min-w-0 flex-1">
                       <div className="text-white font-medium text-sm sm:text-base truncate">
-                        {participant.name || participant.nickname}
+                        {participant.name || 'Usuario'}
                       </div>
-                      <div className="text-slate-400 text-xs sm:text-sm truncate">
-                        {participant.city}
-                      </div>
+                      {participant.nickname && (
+                        <div className="text-primary-400 text-xs sm:text-sm truncate">
+                          @{participant.nickname}
+                        </div>
+                      )}
+                      {participant.city && (
+                        <div className="text-slate-400 text-xs sm:text-sm truncate">
+                          📍 {participant.city}
+                        </div>
+                      )}
                     </div>
                   </button>
                 ))}

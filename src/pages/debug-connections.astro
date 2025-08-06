@@ -1,0 +1,30 @@
+---
+// Página temporal para debug de conexiones
+---
+
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width" />
+  <meta name="generator" content={Astro.generator} />
+  <title>Debug Conexiones - Festival&Friends</title>
+</head>
+<body>
+  <div id="debug-app"></div>
+  <script>
+    import ConnectionsDebug from '../components/ConnectionsDebug.jsx';
+    import { createRoot } from 'react-dom/client';
+    
+    const container = document.getElementById('debug-app');
+    if (container) {
+      const root = createRoot(container);
+      root.render(ConnectionsDebug());
+    }
+  </script>
+</body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style> 

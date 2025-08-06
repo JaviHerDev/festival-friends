@@ -10,6 +10,7 @@ const useStore = create((set, get) => ({
   
   // UI state
   isLoginModalOpen: false,
+  isProfileModalOpen: false,
   notifications: [],
   unreadNotifications: 0,
   
@@ -160,7 +161,36 @@ const useStore = create((set, get) => ({
       console.log('🔔 Auth state changed:', event, session?.user?.id); // Debug
       
       // Handle different auth events
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'SIGNED_UP' && session?.user) {
+        const user = session.user;
+        console.log('🎉 New user registered:', user.id);
+        
+        // Update state
+        set({ user, isLoading: false });
+        
+        // Load user profile
+        try {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile) {
+            console.log('✅ Profile loaded for new user:', profile);
+            set({ userProfile: profile });
+            
+            // Notify about new user registration (assignment to Juergas Rock is handled by DB trigger)
+            await get().notifyNewUserRegistration(profile);
+          }
+        } catch (error) {
+          console.error('❌ Error loading profile for new user:', error);
+        }
+        
+        // Setup realtime subscriptions
+        get().setupRealtimeSubscriptions();
+        
+      } else if (event === 'SIGNED_IN' && session?.user) {
         const user = session.user;
         console.log('✅ User authenticated:', user.id);
         
@@ -257,6 +287,7 @@ const useStore = create((set, get) => ({
   
   // UI actions
   setLoginModalOpen: (isOpen) => set({ isLoginModalOpen: isOpen }),
+  setProfileModalOpen: (isOpen) => set({ isProfileModalOpen: isOpen }),
   
   // Notifications
   loadNotifications: async () => {
@@ -387,6 +418,20 @@ const useStore = create((set, get) => ({
     }
   },
 
+  // Helper function para obtener texto del estado de asistencia
+  getStatusText: (status) => {
+    switch (status) {
+      case 'have_ticket':
+        return 'Tengo la entrada';
+      case 'thinking_about_it':
+        return 'Me lo estoy pensando';
+      case 'not_going':
+        return 'No voy';
+      default:
+        return status;
+    }
+  },
+
   notifyAttendanceChanged: async (festival, user, newStatus, oldStatus = null) => {
     const { userProfile } = get();
     const userName = userProfile?.name || userProfile?.nickname || 'Un rockero';
@@ -397,7 +442,7 @@ const useStore = create((set, get) => ({
         user_id: festival.created_by,
         type: 'attendance_changed',
         title: '🎫 Cambio de Asistencia',
-        message: `${userName} ha cambiado su estado a "${getStatusText(newStatus)}" en "${festival.name}"`,
+        message: `${userName} ha cambiado su estado a "${get().getStatusText(newStatus)}" en "${festival.name}"`,
         data: {
           festival_id: festival.id,
           festival_name: festival.name,
@@ -424,7 +469,7 @@ const useStore = create((set, get) => ({
           user_id: attendeeId,
           type: 'attendance_changed',
           title: '🎫 Cambio de Asistencia',
-          message: `${userName} ha cambiado su estado a "${getStatusText(newStatus)}" en "${festival.name}"`,
+          message: `${userName} ha cambiado su estado a "${get().getStatusText(newStatus)}" en "${festival.name}"`,
           data: {
             festival_id: festival.id,
             festival_name: festival.name,
@@ -477,20 +522,6 @@ const useStore = create((set, get) => ({
     }
     
     return { error };
-  },
-
-  // Helper function para obtener texto del estado de asistencia
-  getStatusText: (status) => {
-    switch (status) {
-      case 'have_ticket':
-        return 'Tengo la entrada';
-      case 'thinking_about_it':
-        return 'Me lo estoy pensando';
-      case 'not_going':
-        return 'No voy';
-      default:
-        return status;
-    }
   },
   
   // Festivals
@@ -551,6 +582,136 @@ const useStore = create((set, get) => ({
     
     if (isActuallyNew) {
       await get().notifyUserJoined(newUser);
+      // NOTA: La asignación automática a Juergas Rock se maneja por el trigger de la base de datos
+      // No es necesario llamar a assignToJuergasRock aquí
+    }
+  },
+
+  // Verificar si la asignación automática a Juergas Rock está activa
+  // Para desactivar la asignación automática, cambia la fecha en assignmentDeadline
+  // Ejemplo: new Date('2024-12-31T23:59:59Z') - se desactiva el 31 de diciembre de 2024
+  isJuergasRockAssignmentActive: () => {
+    // CAMBIAR ESTA FECHA cuando quieras desactivar la asignación automática
+    const assignmentDeadline = new Date('2024-12-31T23:59:59Z');
+    const now = new Date();
+    return now <= assignmentDeadline;
+  },
+
+  // Asignar automáticamente a nuevos usuarios al festival "Juergas Rock"
+  assignToJuergasRock: async (userId) => {
+    try {
+      console.log('🎸 Assigning user to Juergas Rock:', userId);
+      
+      // Verificar si la asignación automática está activa
+      if (!get().isJuergasRockAssignmentActive()) {
+        console.log('⏰ Automatic assignment to Juergas Rock has expired. Skipping assignment.');
+        return { data: null, error: null };
+      }
+      
+      console.log('✅ Automatic assignment to Juergas Rock is still active. Proceeding with assignment.');
+      
+      // Buscar el festival "Juergas Rock"
+      let { data: juergasRock, error: festivalError } = await supabase
+        .from('festivals')
+        .select('id, name')
+        .ilike('name', '%juergas rock%')
+        .single();
+      
+      if (festivalError) {
+        console.log('⚠️ Juergas Rock festival not found, creating it...');
+        
+        // Crear el festival "Juergas Rock" si no existe
+        const { data: newFestival, error: createError } = await supabase
+          .from('festivals')
+          .insert({
+            name: 'Juergas Rock',
+            description: 'El festival más épico de la comunidad Festival&Friends. ¡Donde los rockeros se reúnen para vivir la música!',
+            location: 'Madrid, España',
+            start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 días desde ahora
+            end_date: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString(), // 32 días desde ahora
+            category: 'rock',
+            created_by: userId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select('id, name')
+          .single();
+        
+        if (createError) {
+          console.error('❌ Error creating Juergas Rock festival:', createError);
+          return { error: createError };
+        }
+        
+        console.log('✅ Juergas Rock festival created:', newFestival);
+        juergasRock = newFestival;
+      }
+      
+      // Verificar si el usuario ya tiene asistencia registrada
+      const { data: existingAttendance, error: checkError } = await supabase
+        .from('festival_attendances')
+        .select('id, status')
+        .eq('user_id', userId)
+        .eq('festival_id', juergasRock.id)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing attendance:', checkError);
+        return { error: checkError };
+      }
+      
+      if (existingAttendance) {
+        console.log('ℹ️ User already has attendance for Juergas Rock:', existingAttendance.status);
+        return { data: existingAttendance, error: null };
+      }
+      
+      // Asignar automáticamente como "have_ticket" (con entrada)
+      console.log('🎫 Inserting attendance with status: have_ticket for user:', userId, 'festival:', juergasRock.id);
+      
+      const { data: attendance, error: assignError } = await supabase
+        .from('festival_attendances')
+        .insert({
+          user_id: userId,
+          festival_id: juergasRock.id,
+          status: 'have_ticket', // Siempre asignar como que tiene entrada
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (assignError) {
+        console.error('❌ Error assigning user to Juergas Rock:', assignError);
+        return { error: assignError };
+      }
+      
+      console.log('✅ User assigned to Juergas Rock successfully:', attendance);
+      console.log('🎫 Attendance status saved as:', attendance.status);
+      
+      // Recargar festivales para actualizar la UI
+      await get().loadFestivals();
+      
+      // Verificar que el estado se guardó correctamente
+      const { data: verifyAttendance, error: verifyError } = await supabase
+        .from('festival_attendances')
+        .select('id, status')
+        .eq('user_id', userId)
+        .eq('festival_id', juergasRock.id)
+        .single();
+      
+      if (verifyError) {
+        console.error('❌ Error verifying attendance status:', verifyError);
+      } else {
+        console.log('✅ Attendance status verified:', verifyAttendance.status);
+        if (verifyAttendance.status !== 'have_ticket') {
+          console.error('❌ ATTENTION: Status was not saved as have_ticket! Actual status:', verifyAttendance.status);
+        }
+      }
+      
+      return { data: attendance, error: null };
+      
+    } catch (err) {
+      console.error('❌ Exception assigning user to Juergas Rock:', err);
+      return { data: null, error: err };
     }
   },
   
@@ -604,34 +765,35 @@ const useStore = create((set, get) => ({
 
   deleteFestival: async (festivalId) => {
     const { user } = get();
-    if (!user) return { error: { message: 'Usuario no autenticado' } };
-
-    // First, get the festival to check permissions
-    const { data: festival, error: fetchError } = await supabase
-      .from('festivals')
-      .select('created_by')
-      .eq('id', festivalId)
-      .single();
-
-    if (fetchError) {
-      return { error: { message: 'Festival no encontrado' } };
+    if (!user) {
+      console.log('❌ User not authenticated');
+      return { error: { message: 'Usuario no autenticado' } };
     }
 
-    // Check if user can delete (is creator or admin)
-    if (festival.created_by !== user.id && user.role !== 'admin') {
-      return { error: { message: 'No tienes permisos para eliminar este festival' } };
-    }
+    console.log('🗑️ Attempting to delete festival:', festivalId, 'user:', user.id);
 
-    const { error } = await supabase
-      .from('festivals')
-      .delete()
-      .eq('id', festivalId);
+    try {
+      // Delete the festival - all related data will be automatically deleted via CASCADE
+      const { error } = await supabase
+        .from('festivals')
+        .delete()
+        .eq('id', festivalId);
 
-    if (!error) {
+      if (error) {
+        console.log('❌ Error deleting festival:', error);
+        return { error };
+      }
+
+      console.log('✅ Festival and all related data deleted successfully');
+      
+      // Reload festivals to update the UI
       await get().loadFestivals();
+      
+      return { error: null };
+    } catch (error) {
+      console.log('❌ Exception deleting festival:', error);
+      return { error };
     }
-
-    return { error };
   },
 
   // Festival attendance
@@ -876,16 +1038,24 @@ const useStore = create((set, get) => ({
   // Badge functions
   loadBadgeDefinitions: async () => {
     try {
+      // Cargar todas las insignias (no solo las activas)
       const { data, error } = await supabase
         .from('badge_definitions')
         .select('*')
-        .eq('is_active', true)
         .order('rarity', { ascending: false })
         .order('name');
 
       if (error) {
         console.error('❌ Error loading badge definitions:', error);
         return { data: null, error };
+      }
+
+      console.log('🔍 All badge definitions loaded:', data?.length || 0);
+      if (data && data.length > 0) {
+        console.log('📋 Badge details:');
+        data.forEach(badge => {
+          console.log(`  - ${badge.name} (${badge.badge_key}) - Active: ${badge.is_active}`);
+        });
       }
 
       set({ badgeDefinitions: data || [] });

@@ -226,14 +226,27 @@ const BadgeAwardModal = ({ festival, isOpen, onClose }) => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
-                              <span className="text-white font-semibold">
-                                {(user.name || user.nickname || 'U').charAt(0).toUpperCase()}
-                              </span>
-                            </div>
+                            {user.avatar_url ? (
+                              <img
+                                src={user.avatar_url}
+                                alt={user.name}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-primary-500/30"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
+                                <span className="text-white font-semibold">
+                                  {(user.name || user.nickname || 'U').charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
                             <div>
-                              <div className="text-white font-medium">{user.name || user.nickname}</div>
-                              <div className="text-slate-400 text-sm">{user.city}</div>
+                              <div className="text-white font-medium">{user.name || 'Usuario'}</div>
+                              {user.nickname && (
+                                <div className="text-primary-400 text-sm">@{user.nickname}</div>
+                              )}
+                              {user.city && (
+                                <div className="text-slate-400 text-sm">📍 {user.city}</div>
+                              )}
                             </div>
                           </div>
                           
@@ -271,14 +284,27 @@ const BadgeAwardModal = ({ festival, isOpen, onClose }) => {
                     <div className="bg-gradient-to-r from-primary-600/20 to-purple-600/20 rounded-xl p-4 border border-primary-500/30">
                       <h4 className="text-white font-semibold mb-2">Usuario seleccionado:</h4>
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold">
-                            {(selectedUser.name || selectedUser.nickname || 'U').charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                        {selectedUser.avatar_url ? (
+                          <img
+                            src={selectedUser.avatar_url}
+                            alt={selectedUser.name}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-primary-500/30"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold">
+                              {(selectedUser.name || selectedUser.nickname || 'U').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                         <div>
-                          <div className="text-white font-medium">{selectedUser.name || selectedUser.nickname}</div>
-                          <div className="text-slate-400 text-sm">{selectedUser.city}</div>
+                          <div className="text-white font-medium">{selectedUser.name || 'Usuario'}</div>
+                          {selectedUser.nickname && (
+                            <div className="text-primary-400 text-sm">@{selectedUser.nickname}</div>
+                          )}
+                          {selectedUser.city && (
+                            <div className="text-slate-400 text-sm">📍 {selectedUser.city}</div>
+                          )}
                         </div>
                       </div>
                       

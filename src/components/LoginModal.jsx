@@ -1,8 +1,80 @@
-import { useState, useRef } from 'react';
-import { X, Mail, Lock, User, MapPin, Phone, Instagram, Twitter, FileText, Camera, Upload } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Mail, Lock, User, MapPin, Phone, Instagram, Twitter, FileText, Camera, Upload, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import useStore from '../store/useStore.js';
 import { toast } from '../store/toastStore.js';
-import { signIn, signUp, getUserProfile, uploadAvatar } from '../lib/supabase.js';
+import { signIn, signUp, getUserProfile, uploadAvatar, updateUserProfile } from '../lib/supabase.js';
+import UserAvatar from './UserAvatar.jsx';
+
+// Funciones de validación
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email) return { isValid: false, message: 'El email es requerido' };
+  if (!emailRegex.test(email)) return { isValid: false, message: 'Formato de email inválido' };
+  return { isValid: true, message: '' };
+};
+
+const validatePassword = (password) => {
+  if (!password) return { isValid: false, message: 'La contraseña es requerida' };
+  if (password.length < 6) return { isValid: false, message: 'La contraseña debe tener al menos 6 caracteres' };
+  if (password.length > 50) return { isValid: false, message: 'La contraseña no puede exceder 50 caracteres' };
+  return { isValid: true, message: '' };
+};
+
+const validateName = (name) => {
+  if (!name) return { isValid: false, message: 'El nombre es requerido' };
+  if (name.length < 2) return { isValid: false, message: 'El nombre debe tener al menos 2 caracteres' };
+  if (name.length > 50) return { isValid: false, message: 'El nombre no puede exceder 50 caracteres' };
+  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(name)) return { isValid: false, message: 'El nombre solo puede contener letras y espacios' };
+  return { isValid: true, message: '' };
+};
+
+const validateNickname = (nickname) => {
+  if (!nickname) return { isValid: false, message: 'El nickname es requerido' };
+  if (nickname.length < 3) return { isValid: false, message: 'El nickname debe tener al menos 3 caracteres' };
+  if (nickname.length > 20) return { isValid: false, message: 'El nickname no puede exceder 20 caracteres' };
+  if (!/^[a-zA-Z0-9_]+$/.test(nickname)) return { isValid: false, message: 'El nickname solo puede contener letras, números y guiones bajos' };
+  return { isValid: true, message: '' };
+};
+
+const validateCity = (city) => {
+  if (!city) return { isValid: false, message: 'La ciudad es requerida' };
+  if (city.length < 2) return { isValid: false, message: 'La ciudad debe tener al menos 2 caracteres' };
+  if (city.length > 50) return { isValid: false, message: 'La ciudad no puede exceder 50 caracteres' };
+  return { isValid: true, message: '' };
+};
+
+const validatePhone = (phone) => {
+  if (!phone) return { isValid: true, message: '' }; // Opcional
+  const phoneRegex = /^[\+]?[0-9\s\-\(\)]{9,15}$/;
+  if (!phoneRegex.test(phone)) return { isValid: false, message: 'Formato de teléfono inválido' };
+  return { isValid: true, message: '' };
+};
+
+const validateInstagram = (instagram) => {
+  if (!instagram) return { isValid: true, message: '' }; // Opcional
+  if (instagram.length > 30) return { isValid: false, message: 'El Instagram no puede exceder 30 caracteres' };
+  if (!/^[a-zA-Z0-9._]+$/.test(instagram)) return { isValid: false, message: 'El Instagram solo puede contener letras, números, puntos y guiones bajos' };
+  return { isValid: true, message: '' };
+};
+
+const validateTwitter = (twitter) => {
+  if (!twitter) return { isValid: true, message: '' }; // Opcional
+  if (twitter.length > 15) return { isValid: false, message: 'El Twitter no puede exceder 15 caracteres' };
+  if (!/^[a-zA-Z0-9_]+$/.test(twitter)) return { isValid: false, message: 'El Twitter solo puede contener letras, números y guiones bajos' };
+  return { isValid: true, message: '' };
+};
+
+const validateBio = (bio) => {
+  if (!bio) return { isValid: true, message: '' }; // Opcional
+  if (bio.length > 200) return { isValid: false, message: 'La bio no puede exceder 200 caracteres' };
+  return { isValid: true, message: '' };
+};
+
+const validateKeyPhrase = (keyPhrase) => {
+  if (!keyPhrase) return { isValid: true, message: '' }; // Opcional
+  if (keyPhrase.length > 100) return { isValid: false, message: 'La frase clave no puede exceder 100 caracteres' };
+  return { isValid: true, message: '' };
+};
 
 const LoginModal = () => {
   const { isLoginModalOpen, setLoginModalOpen, setUser } = useStore();
@@ -23,10 +95,80 @@ const LoginModal = () => {
     key_phrase: ''
   });
   
+  // Estados de validación
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+  
+  // Estado para visibilidad de contraseña
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Función para validar un campo específico
+  const validateField = (name, value) => {
+    const validators = {
+      email: validateEmail,
+      password: validatePassword,
+      name: validateName,
+      nickname: validateNickname,
+      city: validateCity,
+      phone: validatePhone,
+      instagram: validateInstagram,
+      twitter: validateTwitter,
+      bio: validateBio,
+      key_phrase: validateKeyPhrase
+    };
+
+    const validator = validators[name];
+    if (!validator) return { isValid: true, message: '' };
+
+    return validator(value);
+  };
+
+  // Función para validar todo el formulario
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    // Validar campos requeridos según el tipo de formulario
+    const requiredFields = isSignUp 
+      ? ['email', 'password', 'name', 'nickname', 'city']
+      : ['email', 'password'];
+
+    requiredFields.forEach(field => {
+      const validation = validateField(field, formData[field]);
+      if (!validation.isValid) {
+        errors[field] = validation.message;
+        isValid = false;
+      }
+    });
+
+    // Validar campos opcionales si tienen valor
+    Object.keys(formData).forEach(field => {
+      if (!requiredFields.includes(field) && formData[field]) {
+        const validation = validateField(field, formData[field]);
+        if (!validation.isValid) {
+          errors[field] = validation.message;
+          isValid = false;
+        }
+      }
+    });
+
+    setFieldErrors(errors);
+    setIsFormValid(isValid);
+    return isValid;
+  };
+
+  // Validar formulario cuando cambian los datos
+  useEffect(() => {
+    if (Object.keys(touchedFields).length > 0) {
+      validateForm();
+    }
+  }, [formData, isSignUp]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +176,36 @@ const LoginModal = () => {
       ...prev,
       [name]: value
     }));
+
+    // Marcar campo como tocado
+    setTouchedFields(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    // Validar campo específico
+    const validation = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.isValid ? '' : validation.message
+    }));
+  };
+
+  const handleFieldBlur = (name) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    const validation = validateField(name, formData[name]);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.isValid ? '' : validation.message
+    }));
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleAvatarChange = (e) => {
@@ -76,6 +248,13 @@ const LoginModal = () => {
 
   const handleSignIn = async (e) => {
     e.preventDefault();
+    
+    // Validar formulario antes de enviar
+    if (!validateForm()) {
+      toast.error('Error de validación', 'Por favor corrige los errores en el formulario.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -96,6 +275,13 @@ const LoginModal = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+    
+    // Validar formulario antes de enviar
+    if (!validateForm()) {
+      toast.error('Error de validación', 'Por favor corrige los errores en el formulario.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -132,6 +318,18 @@ const LoginModal = () => {
         } else {
           // Actualizar el perfil con la URL del avatar
           avatarUrl = uploadData.publicUrl;
+          
+          // Actualizar el perfil del usuario en Supabase con la URL del avatar
+          const { error: updateError } = await updateUserProfile(data.user.id, {
+            avatar_url: avatarUrl
+          });
+          
+          if (updateError) {
+            console.error('Error updating user profile with avatar:', updateError);
+            toast.warning('Advertencia', 'La cuenta se creó y el avatar se subió, pero no se pudo actualizar el perfil. El avatar estará disponible después de confirmar tu email.');
+          } else {
+            console.log('User profile updated with avatar URL:', avatarUrl);
+          }
         }
         setIsUploadingAvatar(false);
       }
@@ -158,6 +356,10 @@ const LoginModal = () => {
       twitter: '',
       key_phrase: ''
     });
+    setFieldErrors({});
+    setTouchedFields({});
+    setIsFormValid(false);
+    setShowPassword(false);
     setAvatarFile(null);
     setAvatarPreview(null);
     if (fileInputRef.current) {
@@ -166,19 +368,113 @@ const LoginModal = () => {
   };
 
   const handleClose = () => {
-    setLoginModalOpen(false);
-    setIsSignUp(false);
-    setError('');
-    resetForm();
+    // Verificar si hay datos introducidos o campos tocados
+    const hasData = Object.values(formData).some(value => value.trim() !== '') || avatarFile;
+    const hasTouchedFields = Object.keys(touchedFields).length > 0;
+    
+    if (hasData || hasTouchedFields) {
+      // Si hay datos o campos tocados, preguntar al usuario si está seguro
+      if (confirm('¿Estás seguro de que quieres cerrar? Se perderán todos los datos introducidos.')) {
+        setLoginModalOpen(false);
+        setIsSignUp(false);
+        setError('');
+        resetForm();
+      }
+    } else {
+      // Si no hay datos, cerrar directamente
+      setLoginModalOpen(false);
+      setIsSignUp(false);
+      setError('');
+      resetForm();
+    }
   };
+
+  // Componente para mostrar errores de campo
+  const FieldError = ({ error, touched }) => {
+    if (!error || !touched) return null;
+    return (
+      <div className="flex items-center space-x-1 mt-1 text-red-400 text-xs">
+        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+        <span>{error}</span>
+      </div>
+    );
+  };
+
+  // Componente para mostrar validación exitosa
+  const FieldSuccess = ({ isValid, touched }) => {
+    if (!isValid || !touched) return null;
+    return (
+      <div className="flex items-center space-x-1 mt-1 text-green-400 text-xs">
+        <CheckCircle className="h-3 w-3 flex-shrink-0" />
+        <span>Campo válido</span>
+      </div>
+    );
+  };
+
+  // Función para obtener clases de input según validación
+  const getInputClasses = (fieldName) => {
+    const baseClasses = "w-full px-3 py-2.5 bg-slate-800/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-all duration-200 text-sm";
+    const touched = touchedFields[fieldName];
+    const error = fieldErrors[fieldName];
+    
+    if (touched && error) {
+      return `${baseClasses} border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50`;
+    } else if (touched && !error && formData[fieldName]) {
+      return `${baseClasses} border-green-500/50 focus:ring-green-500/50 focus:border-green-500/50`;
+    } else {
+      return `${baseClasses} border-slate-600/50 focus:ring-primary-500/50 focus:border-primary-500/50`;
+    }
+  };
+
+  // Función para obtener clases de textarea según validación
+  const getTextareaClasses = (fieldName) => {
+    const baseClasses = "w-full px-3 py-2.5 bg-slate-800/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-all duration-200 text-sm resize-none";
+    const touched = touchedFields[fieldName];
+    const error = fieldErrors[fieldName];
+    
+    if (touched && error) {
+      return `${baseClasses} border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50`;
+    } else if (touched && !error && formData[fieldName]) {
+      return `${baseClasses} border-green-500/50 focus:ring-green-500/50 focus:border-green-500/50`;
+    } else {
+      return `${baseClasses} border-slate-600/50 focus:ring-primary-500/50 focus:border-primary-500/50`;
+    }
+  };
+
+  // Función para calcular progreso de validación
+  const getValidationProgress = () => {
+    if (!isSignUp) {
+      const requiredFields = ['email', 'password'];
+      const completedFields = requiredFields.filter(field => 
+        !fieldErrors[field] && formData[field]
+      );
+      return {
+        completed: completedFields.length,
+        total: requiredFields.length,
+        percentage: (completedFields.length / requiredFields.length) * 100
+      };
+    } else {
+      const requiredFields = ['email', 'password', 'name', 'nickname', 'city'];
+      const completedFields = requiredFields.filter(field => 
+        !fieldErrors[field] && formData[field]
+      );
+      return {
+        completed: completedFields.length,
+        total: requiredFields.length,
+        percentage: (completedFields.length / requiredFields.length) * 100
+      };
+    }
+  };
+
+  const validationProgress = getValidationProgress();
 
   if (!isLoginModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={handleClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       <div className="relative w-full max-w-lg max-h-[95vh] overflow-hidden">
         {/* Modal Container */}
-        <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
           
           {/* Header */}
           <div className="px-6 py-6 border-b border-slate-700/50">
@@ -272,47 +568,56 @@ const LoginModal = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Nombre completo
+                          Nombre completo *
                         </label>
                         <input
                           type="text"
                           name="name"
                           value={formData.name}
                           onChange={handleInputChange}
+                          onBlur={() => handleFieldBlur('name')}
                           required={isSignUp}
-                          className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
+                          className={getInputClasses('name')}
                           placeholder="Tu nombre completo"
                         />
+                        <FieldError error={fieldErrors.name} touched={touchedFields.name} />
+                        <FieldSuccess isValid={!fieldErrors.name && formData.name} touched={touchedFields.name} />
                       </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Apodo
+                          Apodo *
                         </label>
                         <input
                           type="text"
                           name="nickname"
                           value={formData.nickname}
                           onChange={handleInputChange}
+                          onBlur={() => handleFieldBlur('nickname')}
                           required={isSignUp}
-                          className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
+                          className={getInputClasses('nickname')}
                           placeholder="¿Cómo te llaman?"
                         />
+                        <FieldError error={fieldErrors.nickname} touched={touchedFields.nickname} />
+                        <FieldSuccess isValid={!fieldErrors.nickname && formData.nickname} touched={touchedFields.nickname} />
                       </div>
                       
                       <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Ciudad
+                          Ciudad *
                         </label>
                         <input
                           type="text"
                           name="city"
                           value={formData.city}
                           onChange={handleInputChange}
+                          onBlur={() => handleFieldBlur('city')}
                           required={isSignUp}
-                          className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
+                          className={getInputClasses('city')}
                           placeholder="¿De dónde eres?"
                         />
+                        <FieldError error={fieldErrors.city} touched={touchedFields.city} />
+                        <FieldSuccess isValid={!fieldErrors.city && formData.city} touched={touchedFields.city} />
                       </div>
                     </div>
                   </div>
@@ -322,16 +627,19 @@ const LoginModal = () => {
                     <h3 className="text-sm font-medium text-slate-300 mb-3 uppercase tracking-wide">Contacto</h3>
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Teléfono
+                        Teléfono (opcional)
                       </label>
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
+                        onBlur={() => handleFieldBlur('phone')}
+                        className={getInputClasses('phone')}
                         placeholder="+34 XXX XXX XXX"
                       />
+                      <FieldError error={fieldErrors.phone} touched={touchedFields.phone} />
+                      <FieldSuccess isValid={!fieldErrors.phone && formData.phone} touched={touchedFields.phone} />
                     </div>
                   </div>
 
@@ -341,30 +649,36 @@ const LoginModal = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Instagram
+                          Instagram (opcional)
                         </label>
                         <input
                           type="text"
                           name="instagram"
                           value={formData.instagram}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
-                          placeholder="@usuario"
+                          onBlur={() => handleFieldBlur('instagram')}
+                          className={getInputClasses('instagram')}
+                          placeholder="usuario_instagram"
                         />
+                        <FieldError error={fieldErrors.instagram} touched={touchedFields.instagram} />
+                        <FieldSuccess isValid={!fieldErrors.instagram && formData.instagram} touched={touchedFields.instagram} />
                       </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Twitter/X
+                          Twitter/X (opcional)
                         </label>
                         <input
                           type="text"
                           name="twitter"
                           value={formData.twitter}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
-                          placeholder="@usuario"
+                          onBlur={() => handleFieldBlur('twitter')}
+                          className={getInputClasses('twitter')}
+                          placeholder="usuario_twitter"
                         />
+                        <FieldError error={fieldErrors.twitter} touched={touchedFields.twitter} />
+                        <FieldSuccess isValid={!fieldErrors.twitter && formData.twitter} touched={touchedFields.twitter} />
                       </div>
                     </div>
                   </div>
@@ -375,30 +689,36 @@ const LoginModal = () => {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Biografía
+                          Biografía (opcional)
                         </label>
                         <textarea
                           name="bio"
                           value={formData.bio}
                           onChange={handleInputChange}
+                          onBlur={() => handleFieldBlur('bio')}
                           rows={3}
-                          className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm resize-none"
+                          className={getTextareaClasses('bio')}
                           placeholder="Cuéntanos sobre ti..."
                         />
+                        <FieldError error={fieldErrors.bio} touched={touchedFields.bio} />
+                        <FieldSuccess isValid={!fieldErrors.bio && formData.bio} touched={touchedFields.bio} />
                       </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Frase favorita
+                          Frase favorita (opcional)
                         </label>
                         <input
                           type="text"
                           name="key_phrase"
                           value={formData.key_phrase}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
+                          onBlur={() => handleFieldBlur('key_phrase')}
+                          className={getInputClasses('key_phrase')}
                           placeholder="Tu frase o lema favorito"
                         />
+                        <FieldError error={fieldErrors.key_phrase} touched={touchedFields.key_phrase} />
+                        <FieldSuccess isValid={!fieldErrors.key_phrase && formData.key_phrase} touched={touchedFields.key_phrase} />
                       </div>
                     </div>
                   </div>
@@ -411,40 +731,76 @@ const LoginModal = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Email
+                      Email *
                     </label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur('email')}
                       required
-                      className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
+                      className={getInputClasses('email')}
                       placeholder="tu@email.com"
                     />
+                    <FieldError error={fieldErrors.email} touched={touchedFields.email} />
+                    <FieldSuccess isValid={!fieldErrors.email && formData.email} touched={touchedFields.email} />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Contraseña
+                      Contraseña *
                     </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        onBlur={() => handleFieldBlur('password')}
+                        required
+                        className={`${getInputClasses('password')} pr-12`}
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-slate-400 hover:text-slate-300 transition-colors"
+                        aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    <FieldError error={fieldErrors.password} touched={touchedFields.password} />
+                    <FieldSuccess isValid={!fieldErrors.password && formData.password} touched={touchedFields.password} />
                   </div>
                 </div>
               </div>
 
+              {/* Progress Indicator */}
+              {isSignUp && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-xs text-slate-400">
+                    <span>Progreso del formulario</span>
+                    <span>{validationProgress.completed}/{validationProgress.total} campos completados</span>
+                  </div>
+                  <div className="w-full bg-slate-700/50 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${validationProgress.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading || isUploadingAvatar}
+                disabled={isLoading || isUploadingAvatar || !isFormValid}
                 className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 {isLoading || isUploadingAvatar ? (
@@ -456,19 +812,35 @@ const LoginModal = () => {
                   <span>{isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}</span>
                 )}
               </button>
+              
+              {/* Mensaje de validación del formulario */}
+              {!isFormValid && Object.keys(touchedFields).length > 0 && (
+                <div className="text-center">
+                  <p className="text-xs text-slate-400">
+                    Por favor completa todos los campos requeridos correctamente
+                  </p>
+                </div>
+              )}
             </form>
           </div>
 
           {/* Footer */}
           <div className="px-6 py-4 bg-slate-800/30 border-t border-slate-700/50">
-            <div className="text-center">
+            <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+              <button
+                onClick={handleClose}
+                className="text-slate-400 hover:text-slate-300 transition-colors text-sm px-3 py-1 rounded-lg hover:bg-slate-700/50"
+              >
+                Cancelar
+              </button>
+              
               <button
                 onClick={() => {
                   setIsSignUp(!isSignUp);
                   setError('');
                   resetForm();
                 }}
-                className="text-primary-400 hover:text-primary-300 transition-colors text-sm"
+                className="text-primary-400 hover:text-primary-300 transition-colors text-sm px-3 py-1 rounded-lg hover:bg-slate-700/50"
               >
                 {isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
               </button>
@@ -478,6 +850,6 @@ const LoginModal = () => {
       </div>
     </div>
   );
-};
-
+  };
+  
 export default LoginModal; 

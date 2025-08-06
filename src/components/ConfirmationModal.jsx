@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const ConfirmationModal = ({ 
@@ -12,6 +14,18 @@ const ConfirmationModal = ({
   cancelText = 'Cancelar',
   confirmVariant = 'danger' // 'danger' | 'primary' | 'secondary'
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const getConfirmButtonClass = () => {
@@ -32,9 +46,16 @@ const ConfirmationModal = ({
     onClose();
   };
 
-  return (
-    <div className="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div className="bg-slate-900/95 backdrop-blur-lg border border-slate-600/70 sm:max-w-lg w-full max-h-[90vh] flex flex-col rounded-xl shadow-2xl">
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      ></div>
+      
+      {/* Modal Content */}
+      <div className="relative bg-slate-900/95 backdrop-blur-lg border border-slate-600/70 sm:max-w-lg w-full max-h-[90vh] flex flex-col rounded-xl shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-600/50">
           <h2 className="text-xl font-bold text-white">
@@ -77,6 +98,8 @@ const ConfirmationModal = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ConfirmationModal; 

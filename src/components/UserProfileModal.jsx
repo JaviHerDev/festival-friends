@@ -20,6 +20,7 @@ import useStore from '../store/useStore.js';
 import { toast } from '../store/toastStore.js';
 import ConfirmationModal from './ConfirmationModal.jsx';
 import { supabase } from '../lib/supabase.js';
+import UserAvatar from './UserAvatar.jsx';
 
 const UserProfileModal = ({ user, isOpen, onClose }) => {
   const { getUserAttendedEvents, deleteUser, user: currentUser } = useStore();
@@ -471,17 +472,11 @@ const UserHeader = ({ user, formatDate }) => (
   <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
     {/* Avatar */}
     <div className="flex-shrink-0">
-      {user.avatar_url ? (
-        <img
-          src={user.avatar_url}
-          alt={`Avatar de ${user.name}`}
-          className="w-20 h-20 rounded-full object-cover border-2 border-primary-500/50 shadow-lg"
-        />
-      ) : (
-        <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center shadow-lg border-2 border-primary-500/50">
-          <User className="h-10 w-10 text-white" />
-        </div>
-      )}
+      <UserAvatar 
+        user={user} 
+        size="2xl" 
+        className="shadow-lg"
+      />
     </div>
     
     {/* User Info */}
@@ -539,7 +534,7 @@ const KeyPhraseSection = ({ keyPhrase }) => (
 
 // Contact Section Component
 const ContactSection = ({ user }) => {
-  const hasContactInfo = user.phone || user.instagram_url || user.twitter_url;
+  const hasContactInfo = user.phone || user.instagram || user.twitter;
   
   if (!hasContactInfo) return null;
 
@@ -582,16 +577,16 @@ const ContactSection = ({ user }) => {
       )}
 
       {/* Social Networks */}
-      {(user.instagram_url || user.twitter_url) && (
+      {(user.instagram || user.twitter) && (
         <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
           <h4 className="text-base font-semibold text-white mb-3 flex items-center">
-            <span className="mr-2">📲</span>
+            <span className="mr-2">🌐</span>
             Redes Sociales
           </h4>
           <div className="space-y-3">
-            {user.instagram_url && (
+            {user.instagram && (
               <SocialLink
-                url={user.instagram_url}
+                url={`https://www.instagram.com/${user.instagram.replace(/^@/, '')}/`}
                 platform="Instagram"
                 description="Sígueme en Instagram"
                 icon={
@@ -603,9 +598,9 @@ const ContactSection = ({ user }) => {
               />
             )}
             
-            {user.twitter_url && (
+            {user.twitter && (
               <SocialLink
-                url={user.twitter_url}
+                url={`https://x.com/${user.twitter.replace(/^@/, '')}`}
                 platform="X (Twitter)"
                 description="Sígueme en X"
                 icon={

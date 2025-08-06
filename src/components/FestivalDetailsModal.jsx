@@ -8,6 +8,7 @@ import { toast } from '../store/toastStore.js';
 import EventSurvey from './EventSurvey.jsx';
 import SurveyStats from './SurveyStats.jsx';
 import SurveyNotification from './SurveyNotification.jsx';
+import UserAvatar from './UserAvatar.jsx';
 
 const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
   const { user, updateAttendance, submitSurveyResponse, checkSurveySubmitted } = useStore();
@@ -508,22 +509,22 @@ const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
                   <div className="flex flex-wrap gap-1 sm:gap-2">
                     {attendeesWithTickets.slice(0, 8).map(attendance => (
                       <div key={attendance.user_id} className="flex items-center space-x-1 sm:space-x-2 bg-green-600/20 px-2 sm:px-3 py-1 rounded-full">
-                        {attendance.user?.avatar_url ? (
-                          <img 
-                            src={attendance.user.avatar_url} 
-                            alt={attendance.user.name}
-                            className="h-4 w-4 sm:h-6 sm:w-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-4 w-4 sm:h-6 sm:w-6 bg-green-600 rounded-full flex items-center justify-center">
-                            <span className="text-xs text-white font-bold">
-                              {attendance.user?.name?.charAt(0) || '?'}
+                        <UserAvatar 
+                          user={attendance.user} 
+                          size="xs" 
+                          showBorder={false}
+                          className="h-4 w-4 sm:h-6 sm:w-6"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs sm:text-sm text-white truncate max-w-16 sm:max-w-20">
+                            {attendance.user?.name || 'Usuario'}
+                          </span>
+                          {attendance.user?.nickname && (
+                            <span className="text-xs text-primary-400 truncate max-w-16 sm:max-w-20">
+                              @{attendance.user.nickname}
                             </span>
-                          </div>
-                        )}
-                        <span className="text-xs sm:text-sm text-white truncate max-w-16 sm:max-w-20">
-                          {attendance.user?.name || 'Usuario'}
-                        </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                     {attendeesWithTickets.length > 8 && (
@@ -541,22 +542,22 @@ const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
                   <div className="flex flex-wrap gap-1 sm:gap-2">
                     {attendeesThinking.slice(0, 8).map(attendance => (
                       <div key={attendance.user_id} className="flex items-center space-x-1 sm:space-x-2 bg-yellow-600/20 px-2 sm:px-3 py-1 rounded-full">
-                        {attendance.user?.avatar_url ? (
-                          <img 
-                            src={attendance.user.avatar_url} 
-                            alt={attendance.user.name}
-                            className="h-4 w-4 sm:h-6 sm:w-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-4 w-4 sm:h-6 sm:w-6 bg-yellow-600 rounded-full flex items-center justify-center">
-                            <span className="text-xs text-white font-bold">
-                              {attendance.user?.name?.charAt(0) || '?'}
+                        <UserAvatar 
+                          user={attendance.user} 
+                          size="xs" 
+                          showBorder={false}
+                          className="h-4 w-4 sm:h-6 sm:w-6"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs sm:text-sm text-white truncate max-w-16 sm:max-w-20">
+                            {attendance.user?.name || 'Usuario'}
+                          </span>
+                          {attendance.user?.nickname && (
+                            <span className="text-xs text-primary-400 truncate max-w-16 sm:max-w-20">
+                              @{attendance.user.nickname}
                             </span>
-                          </div>
-                        )}
-                        <span className="text-xs sm:text-sm text-white truncate max-w-16 sm:max-w-20">
-                          {attendance.user?.name || 'Usuario'}
-                        </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                     {attendeesThinking.length > 8 && (
@@ -574,22 +575,22 @@ const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
                   <div className="flex flex-wrap gap-1 sm:gap-2">
                     {attendeesNotGoing.slice(0, 8).map(attendance => (
                       <div key={attendance.user_id} className="flex items-center space-x-1 sm:space-x-2 bg-red-600/20 px-2 sm:px-3 py-1 rounded-full">
-                        {attendance.user?.avatar_url ? (
-                          <img 
-                            src={attendance.user.avatar_url} 
-                            alt={attendance.user.name}
-                            className="h-4 w-4 sm:h-6 sm:w-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-4 w-4 sm:h-6 sm:w-6 bg-red-600 rounded-full flex items-center justify-center">
-                            <span className="text-xs text-white font-bold">
-                              {attendance.user?.name?.charAt(0) || '?'}
+                        <UserAvatar 
+                          user={attendance.user} 
+                          size="xs" 
+                          showBorder={false}
+                          className="h-4 w-4 sm:h-6 sm:w-6"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs sm:text-sm text-white truncate max-w-16 sm:max-w-20">
+                            {attendance.user?.name || 'Usuario'}
+                          </span>
+                          {attendance.user?.nickname && (
+                            <span className="text-xs text-primary-400 truncate max-w-16 sm:max-w-20">
+                              @{attendance.user.nickname}
                             </span>
-                          </div>
-                        )}
-                        <span className="text-xs sm:text-sm text-white truncate max-w-16 sm:max-w-20">
-                          {attendance.user?.name || 'Usuario'}
-                        </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                     {attendeesNotGoing.length > 8 && (

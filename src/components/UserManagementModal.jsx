@@ -3,6 +3,7 @@ import { X, Trash2, User, AlertTriangle, CheckCircle } from 'lucide-react';
 import useStore from '../store/useStore.js';
 import { toast } from '../store/toastStore.js';
 import { deleteUser, userExists } from '../lib/supabase.js';
+import UserAvatar from './UserAvatar.jsx';
 
 const UserManagementModal = () => {
   const { isUserManagementModalOpen, setUserManagementModalOpen, currentUser } = useStore();
@@ -88,9 +89,10 @@ const UserManagementModal = () => {
               {users.map((user) => (
                 <div key={user.id} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg border border-slate-700/30">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5 text-white" />
-                    </div>
+                    <UserAvatar 
+                      user={user} 
+                      size="md" 
+                    />
                     <div>
                       <h3 className="text-white font-medium">{user.name || 'Usuario'}</h3>
                       <p className="text-slate-400 text-sm">{user.email}</p>

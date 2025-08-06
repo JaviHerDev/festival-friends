@@ -17,18 +17,20 @@ import {
 import useStore from '../store/useStore.js';
 
 const ConnectionsTree = () => {
-  const { users, loadUsers, user, userProfile, isLoading: authLoading, forceAuthCheck } = useStore();
+  const { users, loadUsers, user, userProfile, setProfileModalOpen, isLoading: authLoading, forceAuthCheck } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   const [selectedUser, setSelectedUser] = useState(null);
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [pan, setPan] = useState({ x: 0, y: 0 }); // Start at origin to show complete grid
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showMobileControls, setShowMobileControls] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [autoCenter, setAutoCenter] = useState(true);
+  const [isCentering, setIsCentering] = useState(false);
+  const [showFloatingControls, setShowFloatingControls] = useState(true);
   const containerRef = useRef(null);
 
   // Detect mobile device
@@ -52,30 +54,90 @@ const ConnectionsTree = () => {
   useEffect(() => {
     if (user && users.length > 0 && autoCenter) {
       centerOnUser(user.id);
+    } else if (users.length > 0) {
+      // If no auto-center, at least show the complete grid
+      resetView();
     }
   }, [users, user, autoCenter]);
 
+  // Ensure grid is visible when component mounts
+  useEffect(() => {
+    if (!isLoading && users.length > 0 && containerRef.current) {
+      // Small delay to ensure container dimensions are available
+      setTimeout(() => {
+        resetView();
+      }, 100);
+    }
+  }, [isLoading, users.length]);
+
   const centerOnUser = (userId) => {
+    if (!userId) {
+      console.log('⚠️ No user ID provided for centering');
+      return;
+    }
+
+    console.log('🎯 Centering on user:', userId);
+    setIsCentering(true);
+    
+    // Build the tree first
+    const tree = buildConnectionsTree();
+    
     // Find user position in tree and center on it
-    const findUserPosition = (nodes, targetId, x = 0, y = 0) => {
+    const findUserPosition = (nodes, targetId, x = 0, y = 0, level = 0) => {
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
+        
+        // Check if this is the target user
         if (node.id === targetId) {
-          const centerX = window.innerWidth / 2 - (x + 100);
-          const centerY = window.innerHeight / 2 - (y + 40);
+          console.log('✅ Found user at position:', { x, y, level });
+          
+          // Calculate center position
+          const containerWidth = containerRef.current?.clientWidth || window.innerWidth;
+          const containerHeight = containerRef.current?.clientHeight || window.innerHeight;
+          
+          const centerX = (containerWidth / 2) - (x + 110); // 110 = half of card width
+          const centerY = (containerHeight / 2) - (y + 45);  // 45 = half of card height
+          
+          console.log('🎯 Centering to:', { centerX, centerY });
+          
           setPan({ x: centerX, y: centerY });
           setZoom(1);
           return true;
         }
+        
+        // If this node has children, search in them
         if (node.children && node.children.length > 0) {
-          const found = findUserPosition(node.children, targetId, x + 250, y + (i * 120));
+          // Expand this node if it's not already expanded
+          if (!expandedNodes.has(node.id)) {
+            console.log('📂 Expanding node to find user:', node.name);
+            const newExpanded = new Set(expandedNodes);
+            newExpanded.add(node.id);
+            setExpandedNodes(newExpanded);
+          }
+          
+          // Calculate child position
+          const childX = x + (isMobile ? 180 : 280); // levelSpacing
+          const childY = y + (i * (isMobile ? 90 : 140)); // nodeSpacing
+          
+          const found = findUserPosition(node.children, targetId, childX, childY, level + 1);
           if (found) return true;
         }
       }
       return false;
     };
     
-    findUserPosition(buildConnectionsTree());
+    const found = findUserPosition(tree, userId);
+    
+    if (!found) {
+      console.log('❌ User not found in tree:', userId);
+      // If user not found, try to reset view
+      resetView();
+    }
+    
+    // Reset loading state after a short delay
+    setTimeout(() => {
+      setIsCentering(false);
+    }, 500);
   };
 
   const handleToggleNode = (userId) => {
@@ -91,12 +153,18 @@ const ConnectionsTree = () => {
   const buildConnectionsTree = () => {
     if (!users.length) return [];
 
+    console.log('🔍 Building connections tree with users:', users.map(u => ({ id: u.id, name: u.name, nexus_person: u.nexus_person })));
+
     // Create a map of users by their nexus_person
     const nexusMap = new Map();
     const rootUsers = [];
+    const allUsersWithNexus = [];
+    const allUsers = new Set();
 
     users.forEach(user => {
+      allUsers.add(user.name);
       if (user.nexus_person) {
+        allUsersWithNexus.push(user);
         if (!nexusMap.has(user.nexus_person)) {
           nexusMap.set(user.nexus_person, []);
         }
@@ -107,17 +175,98 @@ const ConnectionsTree = () => {
       }
     });
 
-    // Build tree structure
-    const buildTree = (user, level = 0) => {
+    console.log('📊 Root users:', rootUsers.map(u => u.name));
+    console.log('🔗 Users with nexus:', allUsersWithNexus.map(u => ({ name: u.name, nexus: u.nexus_person })));
+    console.log('🗺️ Nexus map:', Object.fromEntries(nexusMap));
+
+    // If no root users but we have users with nexus_person, create a virtual root
+    if (rootUsers.length === 0 && allUsersWithNexus.length > 0) {
+      console.log('⚠️ No root users found, creating virtual root');
+      
+      // Find users who are not referenced as nexus_person by anyone else
+      const referencedUsers = new Set();
+      allUsersWithNexus.forEach(user => {
+        if (user.nexus_person) {
+          referencedUsers.add(user.nexus_person);
+        }
+      });
+
+      console.log('📋 Referenced users:', Array.from(referencedUsers));
+
+      // Users who are not referenced by others become root nodes
+      allUsersWithNexus.forEach(user => {
+        if (!referencedUsers.has(user.name)) {
+          console.log('🌱 Adding as root:', user.name, '(not referenced by others)');
+          rootUsers.push(user);
+        } else {
+          console.log('🔗 Not adding as root:', user.name, '(referenced by others)');
+        }
+      });
+
+      // If still no root users (circular references), use the first user as root
+      if (rootUsers.length === 0 && allUsersWithNexus.length > 0) {
+        console.log('🔄 Circular references detected, using first user as root');
+        rootUsers.push(allUsersWithNexus[0]);
+      }
+
+      console.log('🌱 Final root users:', rootUsers.map(u => u.name));
+    }
+
+    // Build tree structure with improved logic
+    const buildTree = (user, level = 0, visited = new Set()) => {
+      // Prevent infinite loops
+      if (visited.has(user.id)) {
+        console.log('⚠️ Circular reference detected for user:', user.name);
+        return {
+          ...user,
+          children: [],
+          level,
+          hasCircularReference: true
+        };
+      }
+
+      visited.add(user.id);
       const children = nexusMap.get(user.name) || [];
-      return {
+      
+      const result = {
         ...user,
-        children: children.map(child => buildTree(child, level + 1)),
+        children: children.map(child => buildTree(child, level + 1, new Set(visited))),
         level
       };
+
+      visited.delete(user.id);
+      return result;
     };
 
-    return rootUsers.map(rootUser => buildTree(rootUser));
+    // Build the main tree
+    const tree = rootUsers.map(rootUser => buildTree(rootUser));
+    
+    // Track all users that are already included in the tree
+    const includedUsers = new Set();
+    const addIncludedUsers = (node) => {
+      includedUsers.add(node.id); // Use ID instead of name to avoid duplicates
+      node.children.forEach(addIncludedUsers);
+    };
+    
+    tree.forEach(addIncludedUsers);
+
+    // Only add truly orphaned users (users with nexus_person but not in the tree)
+    const orphanedUsers = users.filter(user => 
+      user.nexus_person && !includedUsers.has(user.id)
+    );
+
+    if (orphanedUsers.length > 0) {
+      console.log('🔍 Found orphaned users:', orphanedUsers.map(u => u.name));
+      
+      // Create a separate tree for orphaned users
+      orphanedUsers.forEach(orphanedUser => {
+        const orphanedTree = buildTree(orphanedUser);
+        tree.push(orphanedTree);
+      });
+    }
+
+    console.log('🌳 Final tree:', tree);
+    return tree;
   };
 
   const filterTree = (tree, searchTerm) => {
@@ -234,9 +383,12 @@ const ConnectionsTree = () => {
   };
 
   const resetView = () => {
-    setZoom(1);
+    // Reset to show the complete container with grid
     setPan({ x: 0, y: 0 });
+    setZoom(1);
     setAutoCenter(true);
+    
+    console.log('🎯 Resetting view to show complete grid');
   };
 
   const expandAll = () => {
@@ -287,6 +439,79 @@ const ConnectionsTree = () => {
         <p className="text-slate-500">
           Necesitas estar autenticado para acceder a esta funcionalidad
         </p>
+      </div>
+    );
+  }
+
+  // Show loading while userProfile is being loaded
+  if (user && !userProfile && !authLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-slate-300">Cargando tu perfil...</p>
+      </div>
+    );
+  }
+
+  // Show message if user doesn't have nexus_person configured
+  if (user && userProfile && !userProfile.nexus_person) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">🔗</div>
+        <h3 className="text-xl font-semibold text-white mb-4">
+          Necesitas configurar tu Persona Nexo
+        </h3>
+        <div className="max-w-2xl mx-auto space-y-4">
+          <p className="text-slate-300 text-lg">
+            Para poder visualizarte en el árbol de conexiones, necesitas especificar quién te introdujo en la comunidad.
+          </p>
+          
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 text-left">
+            <h4 className="text-lg font-semibold text-white mb-3">📋 ¿Cómo configurar tu Persona Nexo?</h4>
+            <ol className="space-y-3 text-slate-300">
+              <li className="flex items-start space-x-3">
+                <span className="bg-primary-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">1</span>
+                <span>Ve a tu <strong>perfil de usuario</strong> haciendo clic en tu avatar en la esquina superior derecha</span>
+              </li>
+              <li className="flex items-start space-x-3">
+                <span className="bg-primary-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">2</span>
+                <span>Busca la sección <strong>"Persona Nexo"</strong> en tu perfil</span>
+              </li>
+              <li className="flex items-start space-x-3">
+                <span className="bg-primary-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">3</span>
+                <span>Escribe el <strong>nombre o nickname</strong> de la persona que te introdujo en Festival&Friends</span>
+              </li>
+              <li className="flex items-start space-x-3">
+                <span className="bg-primary-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">4</span>
+                <span>Guarda los cambios y <strong>vuelve aquí</strong> para ver tu posición en el árbol</span>
+              </li>
+            </ol>
+          </div>
+
+          <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4">
+            <p className="text-yellow-300 text-sm">
+              💡 <strong>Consejo:</strong> Si no recuerdas quién te introdujo o eres uno de los fundadores, 
+              puedes escribir tu propio nombre o "Fundador" en el campo de Persona Nexo.
+            </p>
+          </div>
+
+          <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+            <p className="text-blue-300 text-sm">
+              🌳 <strong>¿Qué es el Árbol de Conexiones?</strong> Es una visualización de cómo se conectan 
+              todos los miembros de la comunidad, mostrando quién introdujo a quién en Festival&Friends.
+            </p>
+          </div>
+
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={() => setProfileModalOpen(true)}
+              className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors border border-primary-500 hover:border-primary-400 flex items-center space-x-2"
+            >
+              <UserIcon className="h-5 w-5" />
+              <span>Ir a Mi Perfil</span>
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -380,11 +605,26 @@ const ConnectionsTree = () => {
         </button>
 
         <button
-          onClick={() => centerOnUser(user.id)}
-          className="px-3 py-1 bg-yellow-600/50 hover:bg-yellow-600/70 text-white text-sm font-medium rounded-lg transition-colors border border-yellow-500/50 hover:border-yellow-400/50 flex items-center space-x-2"
+          onClick={() => {
+            if (user && user.id) {
+              centerOnUser(user.id);
+            } else {
+              console.log('⚠️ No user available for centering');
+            }
+          }}
+          disabled={!user || !user.id || isCentering}
+          className={`px-3 py-1 text-white text-sm font-medium rounded-lg transition-colors border flex items-center space-x-2 ${
+            user && user.id && !isCentering
+              ? 'bg-yellow-600/50 hover:bg-yellow-600/70 border-yellow-500/50 hover:border-yellow-400/50' 
+              : 'bg-slate-600/50 border-slate-500/50 cursor-not-allowed opacity-50'
+          }`}
         >
-          <UserIcon className="h-4 w-4" />
-          <span>Mi Posición</span>
+          {isCentering ? (
+            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+          ) : (
+            <UserIcon className="h-4 w-4" />
+          )}
+          <span>{isCentering ? 'Centrando...' : 'Mi Posición'}</span>
         </button>
         
         <div className="flex items-center space-x-2 px-3 py-1 bg-slate-700/50 rounded-lg border border-slate-600/50">
@@ -536,6 +776,94 @@ const ConnectionsTree = () => {
                 isMobile={isMobile}
               />
             </div>
+            
+            {/* Floating Controls in Corner */}
+            {showFloatingControls && (
+              <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-4 right-4'} flex flex-col space-y-1 z-10`}>
+                {/* Zoom Controls */}
+                <div className="flex flex-col space-y-1">
+                  <button
+                    onClick={zoomIn}
+                    className={`${isMobile ? 'p-1.5' : 'p-2'} bg-slate-800/80 hover:bg-slate-700/80 text-white rounded-lg transition-all duration-200 border border-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm shadow-lg`}
+                    title="Zoom In"
+                  >
+                    <PlusIcon className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                  </button>
+                  <button
+                    onClick={zoomOut}
+                    className={`${isMobile ? 'p-1.5' : 'p-2'} bg-slate-800/80 hover:bg-slate-700/80 text-white rounded-lg transition-all duration-200 border border-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm shadow-lg`}
+                    title="Zoom Out"
+                  >
+                    <MinusIcon className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                  </button>
+                </div>
+                
+                {/* View Controls */}
+                <div className="flex flex-col space-y-1">
+                  <button
+                    onClick={resetView}
+                    className={`${isMobile ? 'p-1.5' : 'p-2'} bg-blue-600/80 hover:bg-blue-500/80 text-white rounded-lg transition-all duration-200 border border-blue-500/50 hover:border-blue-400/50 backdrop-blur-sm shadow-lg`}
+                    title="Reset View"
+                  >
+                    <ArrowPathIcon className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (user && user.id) {
+                        centerOnUser(user.id);
+                      }
+                    }}
+                    disabled={!user || !user.id || isCentering}
+                    className={`${isMobile ? 'p-1.5' : 'p-2'} rounded-lg transition-all duration-200 border backdrop-blur-sm shadow-lg ${
+                      user && user.id && !isCentering
+                        ? 'bg-yellow-600/80 hover:bg-yellow-500/80 text-white border-yellow-500/50 hover:border-yellow-400/50'
+                        : 'bg-slate-600/80 text-slate-400 border-slate-500/50 cursor-not-allowed'
+                    }`}
+                    title="My Position"
+                  >
+                    {isCentering ? (
+                      <div className={`animate-spin ${isMobile ? 'h-3 w-3' : 'h-4 w-4'} border-2 border-white border-t-transparent rounded-full`} />
+                    ) : (
+                      <UserIcon className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                    )}
+                  </button>
+                </div>
+                
+                {/* Tree Controls - Only show on desktop */}
+                {!isMobile && (
+                  <div className="flex flex-col space-y-1">
+                    <button
+                      onClick={expandAll}
+                      className="p-2 bg-green-600/80 hover:bg-green-500/80 text-white rounded-lg transition-all duration-200 border border-green-500/50 hover:border-green-400/50 backdrop-blur-sm shadow-lg"
+                      title="Expand All"
+                    >
+                      <ArrowsPointingOutIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={collapseAll}
+                      className="p-2 bg-red-600/80 hover:bg-red-500/80 text-white rounded-lg transition-all duration-200 border border-red-500/50 hover:border-red-400/50 backdrop-blur-sm shadow-lg"
+                      title="Collapse All"
+                    >
+                      <ArrowsPointingInIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Toggle Controls Button */}
+            <button
+              onClick={() => setShowFloatingControls(!showFloatingControls)}
+              className={`absolute ${isMobile ? 'top-2 left-2' : 'top-4 left-4'} p-2 bg-slate-800/80 hover:bg-slate-700/80 text-white rounded-lg transition-all duration-200 border border-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm shadow-lg z-10`}
+              title={showFloatingControls ? "Hide Controls" : "Show Controls"}
+            >
+              <HandRaisedIcon className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+            </button>
+            
+            {/* Zoom Level Indicator */}
+            <div className={`absolute ${isMobile ? 'bottom-2 right-2' : 'bottom-4 right-4'} bg-slate-800/80 text-white ${isMobile ? 'px-2 py-1' : 'px-3 py-2'} rounded-lg border border-slate-600/50 backdrop-blur-sm shadow-lg z-10`}>
+              <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>{Math.round(zoom * 100)}%</span>
+            </div>
           </div>
         </div>
       )}
@@ -583,52 +911,110 @@ const VisualTree = ({ data, expandedNodes, onToggleNode, selectedUser, onSelectU
     const isCurrentUser = currentUserId && node.id === currentUserId;
     const isSelected = selectedUser && selectedUser.id === node.id;
 
-    // Enhanced responsive sizing
-    const nodeWidth = isMobile ? 140 : 200;
-    const nodeHeight = isMobile ? 60 : 80;
-    const levelSpacing = isMobile ? 160 : 250;
-    const nodeSpacing = isMobile ? 80 : 120;
+    // Enhanced responsive sizing with better proportions
+    const nodeWidth = isMobile ? 160 : 220;
+    const nodeHeight = isMobile ? 70 : 90;
+    const levelSpacing = isMobile ? 180 : 280;
+    const nodeSpacing = isMobile ? 90 : 140;
 
     return (
       <g key={node.id}>
-        {/* Connection lines to children */}
+        {/* Direct connection lines from border to border */}
         {hasChildren && isExpanded && node.children.map((child, index) => {
           const childX = x + levelSpacing;
           const childY = y + (index * nodeSpacing);
           
+          // Calculate the shortest path between cards (borde a borde)
+          const parentCenterX = x + nodeWidth / 2;
+          const parentCenterY = y + nodeHeight / 2;
+          const childCenterX = childX + nodeWidth / 2;
+          const childCenterY = childY + nodeHeight / 2;
+          
+          // Determine optimal connection points based on relative positions
+          let startX, startY, endX, endY;
+          
+          if (childCenterY > parentCenterY + 20) {
+            // Child is significantly below parent - connect from bottom of parent to top of child
+            startX = parentCenterX;
+            startY = y + nodeHeight;
+            endX = childCenterX;
+            endY = childY;
+          } else if (childCenterY < parentCenterY - 20) {
+            // Child is significantly above parent - connect from top of parent to bottom of child
+            startX = parentCenterX;
+            startY = y;
+            endX = childCenterX;
+            endY = childY + nodeHeight;
+          } else {
+            // Child is at similar level - connect horizontally from right of parent to left of child
+            startX = x + nodeWidth;
+            startY = parentCenterY;
+            endX = childX;
+            endY = childCenterY;
+          }
+          
           return (
             <g key={`connection-${node.id}-${child.id}`}>
-              {/* Vertical line from parent */}
+              {/* Glassmorphism connection lines */}
+              <defs>
+                <linearGradient id={`connection-glow-${node.id}-${child.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(59, 130, 246, 0.8)" />
+                  <stop offset="50%" stopColor="rgba(139, 92, 246, 0.8)" />
+                  <stop offset="100%" stopColor="rgba(16, 185, 129, 0.8)" />
+                </linearGradient>
+                <filter id={`connection-blur-${node.id}-${child.id}`}>
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+                </filter>
+                <marker
+                  id={`arrow-${node.id}-${child.id}`}
+                  markerWidth="12"
+                  markerHeight="12"
+                  refX="10"
+                  refY="6"
+                  orient="auto"
+                  markerUnits="strokeWidth"
+                >
+                  <polygon
+                    points="0,0 0,12 10,6"
+                    fill="rgba(16, 185, 129, 0.9)"
+                  />
+                </marker>
+              </defs>
+              
+              {/* Glow effect for direct connection line */}
               <line
-                x1={x + nodeWidth / 2}
-                y1={y + nodeHeight}
-                x2={x + nodeWidth / 2}
-                y2={y + nodeHeight + 20}
-                stroke="#475569"
-                strokeWidth="2"
-                strokeDasharray="5,5"
+                x1={startX}
+                y1={startY}
+                x2={endX}
+                y2={endY}
+                stroke="rgba(59, 130, 246, 0.3)"
+                strokeWidth="8"
+                strokeDasharray="8,4"
+                filter={`url(#connection-blur-${node.id}-${child.id})`}
               />
               
-              {/* Horizontal line to child */}
+              {/* Main direct connection line */}
               <line
-                x1={x + nodeWidth / 2}
-                y1={y + nodeHeight + 20}
-                x2={childX + nodeWidth / 2}
-                y2={childY + nodeHeight / 2}
-                stroke="#475569"
-                strokeWidth="2"
-                strokeDasharray="5,5"
+                x1={startX}
+                y1={startY}
+                x2={endX}
+                y2={endY}
+                stroke={`url(#connection-glow-${node.id}-${child.id})`}
+                strokeWidth="4"
+                strokeDasharray="8,4"
+                opacity="0.9"
               />
               
-              {/* Vertical line to child */}
+              {/* Arrow indicator at the end */}
               <line
-                x1={childX + nodeWidth / 2}
-                y1={childY}
-                x2={childX + nodeWidth / 2}
-                y2={childY + nodeHeight / 2}
-                stroke="#475569"
+                x1={startX}
+                y1={startY}
+                x2={endX}
+                y2={endY}
+                stroke="rgba(16, 185, 129, 0.9)"
                 strokeWidth="2"
-                strokeDasharray="5,5"
+                markerEnd={`url(#arrow-${node.id}-${child.id})`}
+                opacity="0.8"
               />
               
               {/* Render child */}
@@ -642,114 +1028,184 @@ const VisualTree = ({ data, expandedNodes, onToggleNode, selectedUser, onSelectU
           onClick={() => onSelectUser(node)}
           className="cursor-pointer"
         >
-          {/* Node background */}
+          {/* Glassmorphism Node background */}
+          <defs>
+            <linearGradient id={`glass-gradient-${node.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={isCurrentUser ? "rgba(59, 130, 246, 0.15)" : isSelected ? "rgba(139, 92, 246, 0.15)" : node.hasCircularReference ? "rgba(220, 38, 38, 0.15)" : "rgba(30, 41, 59, 0.15)"} />
+              <stop offset="100%" stopColor={isCurrentUser ? "rgba(29, 78, 216, 0.25)" : isSelected ? "rgba(124, 58, 237, 0.25)" : node.hasCircularReference ? "rgba(185, 28, 28, 0.25)" : "rgba(15, 23, 42, 0.25)"} />
+            </linearGradient>
+            <filter id={`glass-blur-${node.id}`}>
+              <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+            </filter>
+          </defs>
+          
+          {/* Glassmorphism effect layers */}
+          {/* Backdrop blur layer */}
+          <rect
+            x={x - 2}
+            y={y - 2}
+            width={nodeWidth + 4}
+            height={nodeHeight + 4}
+            rx="14"
+            fill="rgba(255, 255, 255, 0.1)"
+            filter={`url(#glass-blur-${node.id})`}
+            opacity="0.3"
+          />
+          
+          {/* Main glass card */}
           <rect
             x={x}
             y={y}
             width={nodeWidth}
             height={nodeHeight}
-            rx="8"
-            fill={isCurrentUser ? "#3b82f6" : isSelected ? "#8b5cf6" : "#1e293b"}
-            stroke={isCurrentUser ? "#60a5fa" : isSelected ? "#a78bfa" : "#475569"}
-            strokeWidth="2"
+            rx="12"
+            fill={`url(#glass-gradient-${node.id})`}
+            stroke={isCurrentUser ? "rgba(96, 165, 250, 0.6)" : isSelected ? "rgba(167, 139, 250, 0.6)" : node.hasCircularReference ? "rgba(239, 68, 68, 0.6)" : "rgba(71, 85, 105, 0.6)"}
+            strokeWidth="1.5"
             className="transition-all duration-200 hover:stroke-primary-400"
+            style={{
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)"
+            }}
+          />
+          
+          {/* Glass highlight */}
+          <rect
+            x={x + 1}
+            y={y + 1}
+            width={nodeWidth - 2}
+            height={nodeHeight / 2 - 1}
+            rx="11"
+            fill="rgba(255, 255, 255, 0.1)"
+            opacity="0.3"
           />
 
-          {/* Avatar */}
+          {/* Enhanced Avatar with better styling */}
           {node.avatar_url ? (
             <defs>
               <pattern id={`avatar-${node.id}`} patternUnits="objectBoundingBox" width="1" height="1">
-                <image href={node.avatar_url} width="30" height="30" preserveAspectRatio="xMidYMid slice" />
+                <image href={node.avatar_url} width="40" height="40" preserveAspectRatio="xMidYMid slice" />
               </pattern>
             </defs>
           ) : null}
           
           <circle
-            cx={x + 20}
-            cy={y + 20}
-            r={isMobile ? "12" : "15"}
+            cx={x + 25}
+            cy={y + 25}
+            r={isMobile ? "15" : "18"}
             fill={node.avatar_url ? `url(#avatar-${node.id})` : "#3b82f6"}
-            stroke="#60a5fa"
-            strokeWidth="2"
+            stroke={isCurrentUser ? "#60a5fa" : "#475569"}
+            strokeWidth="3"
           />
 
-          {/* User icon for default avatar */}
+          {/* Enhanced default avatar icon */}
           {!node.avatar_url && (
             <text
-              x={x + 20}
-              y={y + (isMobile ? 25 : 30)}
+              x={x + 25}
+              y={y + (isMobile ? 32 : 35)}
               textAnchor="middle"
               fill="white"
-              fontSize={isMobile ? "10" : "12"}
+              fontSize={isMobile ? "12" : "14"}
               fontWeight="bold"
             >
-              👤
+              {(node.name || node.nickname || 'U').charAt(0).toUpperCase()}
             </text>
           )}
 
-          {/* Current user indicator */}
+          {/* Enhanced Current user indicator */}
           {isCurrentUser && (
-            <circle
-              cx={x + (isMobile ? 30 : 35)}
-              cy={y + (isMobile ? 12 : 15)}
-              r={isMobile ? "4" : "6"}
-              fill="#10b981"
-              stroke="white"
-              strokeWidth="1"
-            />
+            <g>
+              <circle
+                cx={x + (isMobile ? 38 : 42)}
+                cy={y + (isMobile ? 15 : 18)}
+                r={isMobile ? "5" : "7"}
+                fill="#10b981"
+                stroke="white"
+                strokeWidth="2"
+              />
+              <text
+                x={x + (isMobile ? 38 : 42)}
+                y={y + (isMobile ? 18 : 22)}
+                textAnchor="middle"
+                fill="white"
+                fontSize={isMobile ? "8" : "10"}
+                fontWeight="bold"
+              >
+                ✓
+              </text>
+            </g>
           )}
 
-          {/* User name */}
+          {/* Enhanced User name with glassmorphism text effect */}
           <text
-            x={x + (isMobile ? 40 : 50)}
-            y={y + (isMobile ? 15 : 20)}
-            fill="white"
-            fontSize={isMobile ? "8" : "12"}
+            x={x + (isMobile ? 50 : 55)}
+            y={y + (isMobile ? 18 : 22)}
+            fill="rgba(255, 255, 255, 0.95)"
+            fontSize={isMobile ? "10" : "13"}
             fontWeight="bold"
             className="select-none"
+            style={{ textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)" }}
           >
-            {isMobile && node.name.length > 10 ? node.name.substring(0, 10) + '...' : node.name}
+            {isMobile && node.name.length > 12 ? node.name.substring(0, 12) + '...' : node.name}
           </text>
 
-          {/* Nickname - only show on larger screens */}
-          {node.nickname && !isMobile && (
+          {/* Enhanced Nickname with larger white text and better spacing */}
+          {node.nickname && (
             <text
-              x={x + 50}
-              y={y + 35}
-              fill="#60a5fa"
-              fontSize="10"
+              x={x + (isMobile ? 50 : 55)}
+              y={y + (isMobile ? 35 : 42)}
+              fill="rgba(255, 255, 255, 0.95)"
+              fontSize={isMobile ? "10" : "13"}
+              fontWeight="600"
               className="select-none"
+              style={{ textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)" }}
             >
-              @{node.nickname.length > 10 ? node.nickname.substring(0, 10) + '...' : node.nickname}
+              @{(isMobile ? node.nickname.length > 8 : node.nickname.length > 12) 
+                ? node.nickname.substring(0, isMobile ? 8 : 12) + '...' 
+                : node.nickname}
             </text>
           )}
 
-          {/* City - only show on larger screens */}
-          {node.city && !isMobile && (
+          {/* Enhanced City with larger white text and better spacing */}
+          {node.city && (
             <text
-              x={x + 50}
-              y={y + 50}
-              fill="#94a3b8"
-              fontSize="9"
+              x={x + (isMobile ? 50 : 55)}
+              y={y + (isMobile ? 52 : 62)}
+              fill="rgba(255, 255, 255, 0.9)"
+              fontSize={isMobile ? "9" : "11"}
+              fontWeight="500"
               className="select-none"
+              style={{ textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)" }}
             >
-              📍 {node.city.length > 8 ? node.city.substring(0, 8) + '...' : node.city}
+              📍 {(isMobile ? node.city.length > 6 : node.city.length > 10) 
+                ? node.city.substring(0, isMobile ? 6 : 10) + '...' 
+                : node.city}
             </text>
           )}
 
-          {/* Connection count */}
+          {/* Enhanced Connection count badge */}
           {hasChildren && (
-            <text
-              x={x + nodeWidth - 10}
-              y={y + (isMobile ? 15 : 20)}
-              fill="#10b981"
-              fontSize={isMobile ? "8" : "10"}
-              fontWeight="bold"
-              textAnchor="end"
-              className="select-none"
-            >
-              {node.children.length}
-            </text>
+            <g>
+              <circle
+                cx={x + nodeWidth - (isMobile ? 12 : 15)}
+                cy={y + (isMobile ? 18 : 22)}
+                r={isMobile ? "8" : "10"}
+                fill="#10b981"
+                stroke="white"
+                strokeWidth="1"
+              />
+              <text
+                x={x + nodeWidth - (isMobile ? 12 : 15)}
+                y={y + (isMobile ? 22 : 27)}
+                textAnchor="middle"
+                fill="white"
+                fontSize={isMobile ? "8" : "10"}
+                fontWeight="bold"
+                className="select-none"
+              >
+                {node.children.length}
+              </text>
+            </g>
           )}
 
           {/* Enhanced expand/collapse button */}
@@ -762,15 +1218,17 @@ const VisualTree = ({ data, expandedNodes, onToggleNode, selectedUser, onSelectU
               className="cursor-pointer"
             >
               <circle
-                cx={x + nodeWidth - (isMobile ? 15 : 20)}
-                cy={y + nodeHeight - (isMobile ? 15 : 20)}
-                r={isMobile ? "6" : "8"}
+                cx={x + nodeWidth - (isMobile ? 12 : 15)}
+                cy={y + nodeHeight - (isMobile ? 12 : 15)}
+                r={isMobile ? "7" : "9"}
                 fill="#475569"
+                stroke="#64748b"
+                strokeWidth="1"
                 className="hover:fill-slate-600 transition-colors"
               />
               <text
-                x={x + nodeWidth - (isMobile ? 15 : 20)}
-                y={y + nodeHeight - (isMobile ? 12 : 15)}
+                x={x + nodeWidth - (isMobile ? 12 : 15)}
+                y={y + nodeHeight - (isMobile ? 8 : 10)}
                 textAnchor="middle"
                 fill="white"
                 fontSize={isMobile ? "10" : "12"}
@@ -778,6 +1236,30 @@ const VisualTree = ({ data, expandedNodes, onToggleNode, selectedUser, onSelectU
                 className="select-none"
               >
                 {isExpanded ? "−" : "+"}
+              </text>
+            </g>
+          )}
+
+          {/* Status indicator for circular references */}
+          {node.hasCircularReference && (
+            <g>
+              <circle
+                cx={x + (isMobile ? 38 : 42)}
+                cy={y + (isMobile ? 15 : 18)}
+                r={isMobile ? "5" : "7"}
+                fill="#ef4444"
+                stroke="white"
+                strokeWidth="2"
+              />
+              <text
+                x={x + (isMobile ? 38 : 42)}
+                y={y + (isMobile ? 18 : 22)}
+                textAnchor="middle"
+                fill="white"
+                fontSize={isMobile ? "8" : "10"}
+                fontWeight="bold"
+              >
+                ⚠️
               </text>
             </g>
           )}
@@ -790,16 +1272,42 @@ const VisualTree = ({ data, expandedNodes, onToggleNode, selectedUser, onSelectU
     <svg
       width="100%"
       height="100%"
-      viewBox={isMobile ? "0 0 600 400" : "0 0 1200 800"}
+      viewBox="0 0 100% 100%"
+      preserveAspectRatio="xMidYMid meet"
       className="w-full h-full"
     >
-      {/* Background grid */}
+      {/* Glassmorphism background */}
       <defs>
+        <linearGradient id="background-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0a0f1a" />
+          <stop offset="25%" stopColor="#1a1f2a" />
+          <stop offset="50%" stopColor="#0f172a" />
+          <stop offset="75%" stopColor="#1a1f2a" />
+          <stop offset="100%" stopColor="#0a0f1a" />
+        </linearGradient>
+        <radialGradient id="radial-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(59, 130, 246, 0.1)" />
+          <stop offset="100%" stopColor="rgba(59, 130, 246, 0)" />
+        </radialGradient>
         <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-          <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#334155" strokeWidth="1" opacity="0.3"/>
+          <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(71, 85, 105, 0.25)" strokeWidth="1"/>
         </pattern>
+        <pattern id="dots" width="25" height="25" patternUnits="userSpaceOnUse">
+          <circle cx="12.5" cy="12.5" r="1.5" fill="rgba(96, 165, 250, 0.4)"/>
+        </pattern>
+        <filter id="background-blur">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1" />
+        </filter>
       </defs>
+      
+      {/* Background layers with glassmorphism */}
+      <rect width="100%" height="100%" fill="url(#background-gradient)" />
+      <rect width="100%" height="100%" fill="url(#radial-glow)" />
       <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+      
+      {/* Subtle glassmorphism overlay */}
+      <rect width="100%" height="100%" fill="rgba(255, 255, 255, 0.02)" />
       
       {/* Render tree */}
       {data.map((node, index) => renderNode(node, 50, 50 + (index * (isMobile ? 80 : 120))))}

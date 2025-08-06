@@ -143,17 +143,27 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
   };
 
   const handleDeleteConfirm = async () => {
-    setIsDeleting(true);
-    const result = await deleteFestival(festival.id);
-    
-    if (result.error) {
-      toast.error('Error', result.error.message || 'No se pudo eliminar el festival');
-      console.error('Error deleting festival:', result.error);
-    } else {
-      toast.success('¡Eliminado!', 'Festival eliminado correctamente');
+    try {
+      setIsDeleting(true);
+      console.log('🗑️ Attempting to delete festival:', festival.id);
+      
+      const result = await deleteFestival(festival.id);
+      
+      if (result.error) {
+        toast.error('Error', result.error.message || 'No se pudo eliminar el festival');
+        console.error('❌ Error deleting festival:', result.error);
+      } else {
+        toast.success('¡Eliminado!', 'Festival eliminado correctamente');
+        console.log('✅ Festival deleted successfully');
+        // Close the confirmation modal
+        setIsDeleteConfirmationOpen(false);
+      }
+    } catch (error) {
+      console.error('❌ Exception deleting festival:', error);
+      toast.error('Error', 'Error inesperado al eliminar el festival');
+    } finally {
+      setIsDeleting(false);
     }
-    
-    setIsDeleting(false);
   };
 
   const handleEdit = () => {

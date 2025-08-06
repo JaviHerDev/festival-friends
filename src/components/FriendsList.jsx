@@ -12,6 +12,7 @@ import {
 import useStore from '../store/useStore.js';
 import UserProfileModal from './UserProfileModal.jsx';
 import { supabase } from '../lib/supabase.js';
+import UserAvatar from './UserAvatar.jsx';
 
 const FriendsList = () => {
   const { users, loadUsers, user } = useStore();
@@ -356,17 +357,11 @@ const UserCard = ({ user, userBadges, badgesLoading, onOpenProfile }) => {
       <div className="flex items-start space-x-4 mb-4">
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          {user.avatar_url ? (
-            <img
-              src={user.avatar_url}
-              alt={user.name}
-              className="w-16 h-16 rounded-full object-cover border-2 border-primary-500/30 group-hover:border-primary-400/50 transition-colors duration-300"
-            />
-          ) : (
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center border-2 border-primary-500/30 group-hover:border-primary-400/50 transition-colors duration-300">
-              <UserIcon className="h-8 w-8 text-white" />
-            </div>
-          )}
+          <UserAvatar 
+            user={user} 
+            size="xl" 
+            className="group-hover:border-primary-400/50 transition-colors duration-300"
+          />
           
           {/* Online status */}
           <div className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full"></div>
@@ -425,9 +420,9 @@ const UserCard = ({ user, userBadges, badgesLoading, onOpenProfile }) => {
               </a>
             )}
             
-            {user.instagram_url && (
+            {user.instagram && (
               <a
-                href={user.instagram_url}
+                href={`https://www.instagram.com/${user.instagram.replace(/^@/, '')}/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-400 hover:text-pink-400 transition-colors duration-200"
@@ -439,9 +434,9 @@ const UserCard = ({ user, userBadges, badgesLoading, onOpenProfile }) => {
               </a>
             )}
             
-            {user.twitter_url && (
+            {user.twitter && (
               <a
-                href={user.twitter_url}
+                href={`https://x.com/${user.twitter.replace(/^@/, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-400 hover:text-blue-400 transition-colors duration-200"

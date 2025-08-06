@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
-import { XMarkIcon, UserIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, UserIcon, CameraIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline';
 import useStore from '../store/useStore.js';
 import { toast } from '../store/toastStore.js';
 import { updateUserProfile, uploadAvatar } from '../lib/supabase.js';
+import UserAvatar from './UserAvatar.jsx';
 
 const ProfileModal = ({ isOpen, onClose }) => {
-  const { user, userProfile, setUser } = useStore();
+  const { user, userProfile, setUser, users, loadUsers } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAvatar, setIsLoadingAvatar] = useState(false);
   const [error, setError] = useState('');
+  const [nexusSearchTerm, setNexusSearchTerm] = useState('');
+  const [showNexusDropdown, setShowNexusDropdown] = useState(false);
+  const [selectedNexusUser, setSelectedNexusUser] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -39,9 +43,39 @@ const ProfileModal = ({ isOpen, onClose }) => {
         key_phrase: userProfile.key_phrase || '',
         avatar_url: userProfile.avatar_url || ''
       });
+      
+      // Set selected nexus user if exists
+      if (userProfile.nexus_person) {
+        const nexusUser = users.find(u => u.name === userProfile.nexus_person);
+        setSelectedNexusUser(nexusUser || null);
+      } else {
+        setSelectedNexusUser(null);
+      }
+      
       setError('');
     }
-  }, [isOpen, userProfile]);
+  }, [isOpen, userProfile, users]);
+
+  // Load users when modal opens
+  useEffect(() => {
+    if (isOpen && users.length === 0) {
+      loadUsers();
+    }
+  }, [isOpen, users.length, loadUsers]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showNexusDropdown && !event.target.closest('.nexus-dropdown')) {
+        setShowNexusDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNexusDropdown]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -50,6 +84,46 @@ const ProfileModal = ({ isOpen, onClose }) => {
       [name]: value
     }));
   };
+
+  const handleNexusUserSelect = (selectedUser) => {
+    setSelectedNexusUser(selectedUser);
+    setFormData(prev => ({
+      ...prev,
+      nexus_person: selectedUser.name
+    }));
+    setShowNexusDropdown(false);
+    setNexusSearchTerm('');
+  };
+
+  const handleNexusUserRemove = () => {
+    setSelectedNexusUser(null);
+    setFormData(prev => ({
+      ...prev,
+      nexus_person: ''
+    }));
+  };
+
+  const handleCustomNexusPerson = (customText) => {
+    setSelectedNexusUser({
+      id: 'custom',
+      name: customText,
+      nickname: null,
+      avatar_url: null
+    });
+    setFormData(prev => ({
+      ...prev,
+      nexus_person: customText
+    }));
+    setNexusSearchTerm('');
+    setShowNexusDropdown(false);
+  };
+
+  // Filter users for nexus person selection
+  const filteredNexusUsers = users.filter(u => 
+    u.id !== user?.id && // Exclude current user
+    (u.name.toLowerCase().includes(nexusSearchTerm.toLowerCase()) ||
+     (u.nickname && u.nickname.toLowerCase().includes(nexusSearchTerm.toLowerCase())))
+  );
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -142,7 +216,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
           <h2 className="text-2xl font-bold text-white">
-            🎸 Mi Perfil Rockero
+            🎸 Mi Perfil Festivalero
           </h2>
           <button onClick={handleClose} className="text-slate-400 hover:text-white transition-colors">
             <XMarkIcon className="h-6 w-6" />
@@ -160,17 +234,11 @@ const ProfileModal = ({ isOpen, onClose }) => {
             {/* Avatar Section */}
             <div className="text-center">
               <div className="relative inline-block">
-                {formData.avatar_url ? (
-                  <img 
-                    src={formData.avatar_url} 
-                    alt="Avatar" 
-                    className="w-24 h-24 rounded-full object-cover border-4 border-primary-500 shadow-lg"
-                  />
-                ) : (
-                  <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center border-4 border-primary-500 shadow-lg">
-                    <UserIcon className="h-12 w-12 text-white" />
-                  </div>
-                )}
+                <UserAvatar 
+                  user={{ name: formData.name, nickname: formData.nickname, avatar_url: formData.avatar_url }} 
+                  size="3xl" 
+                  className="border-4 border-primary-500 shadow-lg"
+                />
                 
                 <label className="absolute bottom-0 right-0 bg-primary-600 hover:bg-primary-700 rounded-full p-2 cursor-pointer transition-colors shadow-lg border-2 border-slate-900">
                   <CameraIcon className="h-4 w-4 text-white" />
@@ -240,6 +308,215 @@ const ProfileModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
+            {/* Información Rockera */}
+            <div className="border-b border-slate-700/50 pb-6">
+              <h3 className="text-lg font-semibold mb-4 text-primary-400">👤 Sobre mí</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Biografía
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="input resize-none"
+                    placeholder="Cuéntanos sobre ti, tus gustos musicales..."
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center">
+                      <span>Persona que te conectó</span>
+                      <span className="ml-2 text-primary-400">🌳</span>
+                    </label>
+                    
+                    {selectedNexusUser ? (
+                      <div className="flex items-center space-x-2 p-3 bg-slate-800/50 border border-slate-600/50 rounded-lg">
+                        {selectedNexusUser.id === 'custom' ? (
+                          <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">✓</span>
+                          </div>
+                        ) : (
+                          <UserAvatar 
+                            user={selectedNexusUser} 
+                            size="sm" 
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white font-medium text-sm truncate">
+                            {selectedNexusUser.name}
+                          </div>
+                          {selectedNexusUser.nickname && (
+                            <div className="text-primary-400 text-xs truncate">
+                              @{selectedNexusUser.nickname}
+                            </div>
+                          )}
+                          {selectedNexusUser.id === 'custom' && (
+                            <div className="text-primary-400 text-xs truncate">
+                              Texto personalizado
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleNexusUserRemove}
+                          className="text-slate-400 hover:text-white transition-colors p-1"
+                          aria-label="Remover persona nexo"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="relative">
+                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <input
+                            type="text"
+                            value={nexusSearchTerm}
+                            onChange={(e) => {
+                              setNexusSearchTerm(e.target.value);
+                              setShowNexusDropdown(true);
+                            }}
+                            onFocus={() => setShowNexusDropdown(true)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && nexusSearchTerm.trim()) {
+                                handleCustomNexusPerson(nexusSearchTerm.trim());
+                              }
+                            }}
+                            className="input pl-10"
+                            placeholder="Buscar usuario o escribir 'Fundador'..."
+                          />
+                        </div>
+                        
+                        {showNexusDropdown && (
+                          <div className="nexus-dropdown absolute z-10 w-full mt-1 bg-slate-800/95 backdrop-blur-lg border border-slate-600/50 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                            {/* Opciones especiales */}
+                            {nexusSearchTerm.trim() && (
+                              <div className="border-b border-slate-600/50">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCustomNexusPerson(nexusSearchTerm.trim())}
+                                  className="w-full flex items-center space-x-3 p-3 hover:bg-slate-700/50 transition-colors text-left border-l-4 border-primary-500"
+                                >
+                                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-semibold text-sm">✓</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-white font-medium text-sm truncate">
+                                      Usar: "{nexusSearchTerm.trim()}"
+                                    </div>
+                                    <div className="text-primary-400 text-xs truncate">
+                                      Texto personalizado
+                                    </div>
+                                  </div>
+                                </button>
+                              </div>
+                            )}
+                            
+                            {/* Opciones rápidas */}
+                            {!nexusSearchTerm.trim() && (
+                              <div className="border-b border-slate-600/50">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCustomNexusPerson('Fundador')}
+                                  className="w-full flex items-center space-x-3 p-3 hover:bg-slate-700/50 transition-colors text-left"
+                                >
+                                  <div className="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-semibold text-sm">👑</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-white font-medium text-sm truncate">
+                                      Fundador
+                                    </div>
+                                    <div className="text-yellow-400 text-xs truncate">
+                                      Eres uno de los fundadores
+                                    </div>
+                                  </div>
+                                </button>
+                                
+                                <button
+                                  type="button"
+                                  onClick={() => handleCustomNexusPerson(userProfile?.name || 'Mi Nombre')}
+                                  className="w-full flex items-center space-x-3 p-3 hover:bg-slate-700/50 transition-colors text-left"
+                                >
+                                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-semibold text-sm">🔄</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-white font-medium text-sm truncate">
+                                      {userProfile?.name || 'Mi Nombre'}
+                                    </div>
+                                    <div className="text-green-400 text-xs truncate">
+                                      Auto-referencia
+                                    </div>
+                                  </div>
+                                </button>
+                              </div>
+                            )}
+                            
+                            {/* Usuarios existentes */}
+                            {filteredNexusUsers.length === 0 ? (
+                              <div className="p-3 text-center text-slate-400 text-sm">
+                                {nexusSearchTerm ? 'No se encontraron usuarios' : 'No hay otros usuarios aún'}
+                              </div>
+                            ) : (
+                              filteredNexusUsers.map(user => (
+                                <button
+                                  key={user.id}
+                                  type="button"
+                                  onClick={() => handleNexusUserSelect(user)}
+                                  className="w-full flex items-center space-x-3 p-3 hover:bg-slate-700/50 transition-colors text-left"
+                                >
+                                  <UserAvatar 
+                                    user={user} 
+                                    size="sm" 
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-white font-medium text-sm truncate">
+                                      {user.name}
+                                    </div>
+                                    {user.nickname && (
+                                      <div className="text-primary-400 text-xs truncate">
+                                        @{user.nickname}
+                                      </div>
+                                    )}
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-2 p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+                    <p className="text-blue-300 text-xs">
+                      💡 <strong>Consejo:</strong> Si no recuerdas quién te introdujo o eres uno de los fundadores, 
+                      puedes escribir tu propio nombre, "Fundador", o cualquier texto personalizado.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Frase clave rockera
+                    </label>
+                    <input
+                      type="text"
+                      name="key_phrase"
+                      value={formData.key_phrase}
+                      onChange={handleInputChange}
+                      className="input"
+                      placeholder="Tu frase o lema favorito"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Contacto */}
             <div className="border-b border-slate-700/50 pb-6">
               <h3 className="text-lg font-semibold mb-4 text-primary-400">📱 Contacto</h3>
@@ -260,7 +537,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
 
             {/* Redes sociales */}
             <div className="border-b border-slate-700/50 pb-6">
-              <h3 className="text-lg font-semibold mb-4 text-primary-400">📲 Redes Sociales</h3>
+              <h3 className="text-lg font-semibold mb-4 text-primary-400">🌐 Redes Sociales</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -288,56 +565,6 @@ const ProfileModal = ({ isOpen, onClose }) => {
                     className="input"
                     placeholder="@tu_usuario"
                   />
-                </div>
-              </div>
-            </div>
-
-            {/* Información adicional */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-primary-400">🎸 Información Rockera</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Biografía
-                  </label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="input resize-none"
-                    placeholder="Cuéntanos sobre ti, tus gustos musicales..."
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Persona que te conectó
-                    </label>
-                    <input
-                      type="text"
-                      name="nexus_person"
-                      value={formData.nexus_person}
-                      onChange={handleInputChange}
-                      className="input"
-                      placeholder="¿Quién te invitó al grupo?"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Frase clave rockera
-                    </label>
-                    <input
-                      type="text"
-                      name="key_phrase"
-                      value={formData.key_phrase}
-                      onChange={handleInputChange}
-                      className="input"
-                      placeholder="Tu frase o lema favorito"
-                    />
-                  </div>
                 </div>
               </div>
             </div>
