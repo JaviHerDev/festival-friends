@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { X, Mail, Lock, User, MapPin, Phone, Instagram, Twitter, FileText } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, Mail, Lock, User, MapPin, Phone, Instagram, Twitter, FileText, Camera, Upload } from 'lucide-react';
 import useStore from '../store/useStore.js';
 import { toast } from '../store/toastStore.js';
-import { signIn, signUp, getUserProfile } from '../lib/supabase.js';
+import { signIn, signUp, getUserProfile, uploadAvatar } from '../lib/supabase.js';
 
 const LoginModal = () => {
   const { isLoginModalOpen, setLoginModalOpen, setUser } = useStore();
@@ -22,6 +22,11 @@ const LoginModal = () => {
     twitter: '',
     key_phrase: ''
   });
+  
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -29,6 +34,44 @@ const LoginModal = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast.error('Error', 'Por favor selecciona una imagen válida.');
+        return;
+      }
+      
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Error', 'La imagen debe ser menor a 5MB.');
+        return;
+      }
+      
+      setAvatarFile(file);
+      
+      // Crear vista previa
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const removeAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSignIn = async (e) => {
@@ -56,6 +99,8 @@ const LoginModal = () => {
     setIsLoading(true);
     setError('');
 
+    let avatarUrl = '';
+
     const { data, error } = await signUp(
       formData.email, 
       formData.password,
@@ -67,7 +112,8 @@ const LoginModal = () => {
         instagram: formData.instagram,
         bio: formData.bio,
         twitter: formData.twitter,
-        key_phrase: formData.key_phrase
+        key_phrase: formData.key_phrase,
+        avatar_url: avatarUrl
       }
     );
     
@@ -75,6 +121,21 @@ const LoginModal = () => {
       setError(error.message);
       toast.error('Error al crear la cuenta', error.message || 'Ha ocurrido un error inesperado. Inténtalo de nuevo.');
     } else {
+      // Subir avatar si se seleccionó uno
+      if (avatarFile && data?.user) {
+        setIsUploadingAvatar(true);
+        const { data: uploadData, error: uploadError } = await uploadAvatar(data.user.id, avatarFile);
+        
+        if (uploadError) {
+          console.error('Error uploading avatar:', uploadError);
+          toast.warning('Advertencia', 'La cuenta se creó pero no se pudo subir el avatar. Puedes actualizarlo más tarde.');
+        } else {
+          // Actualizar el perfil con la URL del avatar
+          avatarUrl = uploadData.publicUrl;
+        }
+        setIsUploadingAvatar(false);
+      }
+      
       setError('');
       toast.success('¡Cuenta creada exitosamente!', 'Revisa tu email para confirmar tu cuenta y poder iniciar sesión.', { duration: 7000 });
       setLoginModalOpen(false);
@@ -97,6 +158,11 @@ const LoginModal = () => {
       twitter: '',
       key_phrase: ''
     });
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleClose = () => {
@@ -150,6 +216,59 @@ const LoginModal = () => {
                   {/* Datos básicos */}
                   <div>
                     <h3 className="text-sm font-medium text-slate-300 mb-3 uppercase tracking-wide">Datos personales</h3>
+                    
+                    {/* Avatar */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-300 mb-3">
+                        Foto de perfil
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <div className="relative">
+                          <div 
+                            onClick={handleAvatarClick}
+                            className="w-20 h-20 rounded-full bg-slate-800/50 border-2 border-dashed border-slate-600/50 hover:border-primary-500/50 cursor-pointer transition-all duration-200 flex items-center justify-center overflow-hidden group"
+                          >
+                            {avatarPreview ? (
+                              <img 
+                                src={avatarPreview} 
+                                alt="Avatar preview" 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="text-center">
+                                <Camera className="h-6 w-6 text-slate-500 group-hover:text-primary-400 mx-auto mb-1" />
+                                <span className="text-xs text-slate-500 group-hover:text-primary-400">Subir</span>
+                              </div>
+                            )}
+                          </div>
+                          {avatarPreview && (
+                            <button
+                              type="button"
+                              onClick={removeAvatar}
+                              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-slate-400 mb-2">
+                            Haz clic para subir una foto de perfil
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            JPG, PNG o GIF • Máximo 5MB
+                          </p>
+                        </div>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </div>
+                    
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -325,13 +444,13 @@ const LoginModal = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isUploadingAvatar}
                 className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                {isLoading ? (
+                {isLoading || isUploadingAvatar ? (
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Procesando...</span>
+                    <span>{isUploadingAvatar ? 'Subiendo avatar...' : 'Procesando...'}</span>
                   </div>
                 ) : (
                   <span>{isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}</span>
