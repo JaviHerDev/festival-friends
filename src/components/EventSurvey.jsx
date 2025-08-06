@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Star, Trophy, Users, Calendar, Music, Heart, Award, Ghost, Beer, Crown } from 'lucide-react';
 import useStore from '../store/useStore.js';
 import { supabase } from '../lib/supabase.js';
@@ -25,42 +25,27 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
       console.log('🔄 Loading badge definitions for survey...');
       loadBadgeDefinitions();
     }
-  }, [isOpen, badgeDefinitions.length]);
+  }, [isOpen, badgeDefinitions.length, loadBadgeDefinitions]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load users if not already loaded
-      if (users.length === 0) {
-        await loadUsers();
-      }
+      console.log('🔍 Starting to load festival participants...');
       
-      // Verify users are loaded
-      if (users.length === 0) {
-        console.error('No users loaded from store');
-        return;
-      }
-      
-      // Load badge definitions
-      const { data: badgeData, error: badgeError } = await loadBadgeDefinitions();
-      console.log('🔍 Badge definitions loaded:', badgeData?.length || 0, 'badges');
-      if (badgeError) {
-        console.error('❌ Error loading badge definitions:', badgeError);
-      }
-      if (badgeData && badgeData.length > 0) {
-        console.log('📋 Available badges:', badgeData.map(b => ({ name: b.name, key: b.badge_key, active: b.is_active })));
+      // Verificar que las insignias estén cargadas
+      console.log('🔍 Checking badge definitions in store:', badgeDefinitions.length, 'badges');
+      if (badgeDefinitions.length === 0) {
+        console.log('🔄 Loading badge definitions...');
+        await loadBadgeDefinitions();
       }
       
       // Obtener las asistencias del festival directamente
       console.log('🔍 Loading attendances for festival:', event.id, event.name);
       
+      // Primero obtener las asistencias
       const { data: attendancesData, error: attendancesError } = await supabase
         .from('festival_attendances')
-        .select(`
-          user_id,
-          status,
-          user:users(id, name, nickname, avatar_url, city)
-        `)
+        .select('user_id, status')
         .eq('festival_id', event.id);
       
       if (attendancesError) {
@@ -68,19 +53,46 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
         return;
       }
       
-      console.log('🎪 Attendances loaded:', attendancesData?.length || 0, 'attendances');
-      if (attendancesData && attendancesData.length > 0) {
-        console.log('📋 Attendance details:');
-        attendancesData.forEach(att => {
-          console.log(`  - User: ${att.user?.name || 'Unknown'} (${att.user_id}), Status: ${att.status}`);
-        });
-      } else {
+      console.log('🎪 Raw attendances loaded:', attendancesData?.length || 0, 'attendances');
+      console.log('📋 Raw attendances data:', attendancesData);
+      
+      if (!attendancesData || attendancesData.length === 0) {
         console.log('⚠️ No attendances found for this festival');
+        setEventParticipants([]);
+        return;
       }
+      
+      // Luego obtener los usuarios de esas asistencias
+      const userIds = attendancesData.map(att => att.user_id);
+      console.log('👥 User IDs to fetch:', userIds);
+      
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, nickname, avatar_url, city')
+        .in('id', userIds);
+      
+      if (usersError) {
+        console.error('❌ Error loading users:', usersError);
+        return;
+      }
+      
+      console.log('👥 Users loaded:', usersData?.length || 0, 'users');
+      console.log('📋 Users data:', usersData);
+      
+      // Combinar asistencias con datos de usuarios
+      const attendancesWithUsers = attendancesData.map(attendance => {
+        const user = usersData.find(u => u.id === attendance.user_id);
+        return {
+          ...attendance,
+          users: user
+        };
+      });
+      
+      console.log('🎪 Combined attendances with users:', attendancesWithUsers);
       
       const festivalWithAttendances = {
         ...event,
-        attendances: attendancesData || []
+        attendances: attendancesWithUsers || []
       };
       
       console.log('🎪 Festival data loaded:', {
@@ -92,7 +104,7 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
       if (festivalWithAttendances.attendances && festivalWithAttendances.attendances.length > 0) {
         console.log('📋 Attendance details:');
         festivalWithAttendances.attendances.forEach(att => {
-          console.log(`  - User ID: ${att.user_id}, Status: ${att.status}, User: ${att.user?.name || 'Unknown'}`);
+          console.log(`  - User ID: ${att.user_id}, Status: ${att.status}, User: ${att.users?.name || 'Unknown'}`);
         });
       }
       
@@ -109,15 +121,15 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
       
       const attendees = festivalWithAttendances.attendances
         .filter(attendance => {
-          const hasUser = !!attendance.user;
+          const hasUser = !!attendance.users;
           if (!hasUser) {
             console.log('❌ Attendance without user data:', attendance);
           }
           return hasUser;
         })
         .map(attendance => {
-          console.log('✅ Processing user:', attendance.user);
-          return attendance.user;
+          console.log('✅ Processing user:', attendance.users);
+          return attendance.users;
         });
       
       console.log('✅ Event participants found:', attendees.length);
@@ -243,10 +255,26 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
     return badgeQuestions;
   };
 
-  const badgeQuestions = getBadgeQuestions();
-  const allQuestions = [...surveyQuestions, ...badgeQuestions];
-  console.log('📊 Total questions:', allQuestions.length, 'Survey questions:', surveyQuestions.length, 'Badge questions:', badgeQuestions.length);
-  console.log('🏆 Badge questions details:', badgeQuestions.map(q => ({ id: q.id, question: q.question, badge: q.badge?.name })));
+  // Get all available badge questions (only once)
+  const allBadgeQuestions = useMemo(() => getBadgeQuestions(), [badgeDefinitions]);
+  
+  // Only show badge questions that have been answered or are the next one to answer
+  const visibleBadgeQuestions = useMemo(() => {
+    const answeredBadgeQuestions = allBadgeQuestions.filter(q => answers[q.id]);
+    const nextUnansweredBadgeQuestion = allBadgeQuestions.find(q => !answers[q.id]);
+    
+    if (nextUnansweredBadgeQuestion) {
+      return [...answeredBadgeQuestions, nextUnansweredBadgeQuestion];
+    }
+    
+    return answeredBadgeQuestions;
+  }, [allBadgeQuestions, answers]);
+  
+  const allQuestions = [...surveyQuestions, ...visibleBadgeQuestions];
+  const totalQuestions = surveyQuestions.length + allBadgeQuestions.length;
+  
+  console.log('📊 Total questions:', totalQuestions, 'Survey questions:', surveyQuestions.length, 'All badge questions:', allBadgeQuestions.length, 'Visible badge questions:', visibleBadgeQuestions.length);
+  console.log('🏆 Visible badge questions:', visibleBadgeQuestions.map(q => ({ id: q.id, question: q.question, badge: q.badge?.name, answered: !!answers[q.id] })));
 
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({
@@ -258,7 +286,7 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
 
 
   const handleNext = () => {
-    if (currentStep < allQuestions.length - 1) {
+    if (currentStep < totalQuestions - 1) {
       setCurrentStep(currentStep + 1);
       // Clear search when moving to next question
       setParticipantSearch('');
@@ -284,7 +312,7 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
 
     // Process badge nominations from answers
     const processedBadgeNominations = {};
-    getBadgeQuestions().forEach(badgeQuestion => {
+    allBadgeQuestions.forEach(badgeQuestion => {
       const selectedUserId = answers[badgeQuestion.id];
       if (selectedUserId) {
         processedBadgeNominations[badgeQuestion.badge.id] = selectedUserId;
@@ -357,7 +385,10 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
         );
 
       case 'badge':
-        console.log('🎯 Rendering badge question:', question.badge?.name);
+        console.log('🎯 RENDERIZANDO PREGUNTA DE INSIGNIA:');
+        console.log('   - Insignia a asignar:', question.badge?.name);
+        console.log('   - Descripción:', question.badge?.description);
+        console.log('   - Esta insignia NO se filtra, solo se asigna a participantes');
         console.log('👥 Event participants:', eventParticipants.length);
         console.log('📋 Event participants data:', eventParticipants);
         console.log('🔍 Search term:', participantSearch);
@@ -372,7 +403,10 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
                  nickname.includes(searchTerm) || 
                  city.includes(searchTerm);
           
-          console.log(`🔍 User ${participant.name}: matches="${matches}" (name:${name.includes(searchTerm)}, nick:${nickname.includes(searchTerm)}, city:${city.includes(searchTerm)})`);
+          console.log(`🔍 FILTRANDO PARTICIPANTE: "${participant.name}" - Buscando: "${searchTerm}" - Coincide: ${matches}`);
+          console.log(`   - Nombre: "${name}" (coincide: ${name.includes(searchTerm)})`);
+          console.log(`   - Nickname: "${nickname}" (coincide: ${nickname.includes(searchTerm)})`);
+          console.log(`   - Ciudad: "${city}" (coincide: ${city.includes(searchTerm)})`);
           
           return matches;
         });
@@ -389,6 +423,7 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
                 <div className="min-w-0 flex-1">
                   <h4 className="text-white font-semibold text-sm sm:text-base">{question.badge.name}</h4>
                   <p className="text-slate-400 text-xs sm:text-sm">{question.badge.description}</p>
+                  <p className="text-primary-400 text-xs mt-1">✨ Esta insignia será asignada al participante que selecciones</p>
                 </div>
               </div>
             </div>
@@ -513,14 +548,14 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
         <div className="mb-4 sm:mb-6 md:mb-8">
           <div className="flex justify-between text-xs sm:text-sm text-slate-400 mb-2">
             <span>
-              {currentStep < allQuestions.length 
-                ? `Pregunta ${currentStep + 1} de ${allQuestions.length}`
+              {currentStep < totalQuestions 
+                ? `Pregunta ${currentStep + 1} de ${totalQuestions}`
                 : 'Completado'
               }
             </span>
             <span>
-              {currentStep < allQuestions.length 
-                ? `${Math.round(((currentStep + 1) / allQuestions.length) * 100)}%`
+              {currentStep < totalQuestions 
+                ? `${Math.round(((currentStep + 1) / totalQuestions) * 100)}%`
                 : '100%'
               }
             </span>
@@ -529,8 +564,8 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
             <div 
               className="bg-gradient-to-r from-primary-500 to-purple-500 h-1.5 sm:h-2 rounded-full transition-all duration-300"
               style={{ 
-                width: currentStep < allQuestions.length 
-                  ? `${((currentStep + 1) / allQuestions.length) * 100}%`
+                width: currentStep < totalQuestions 
+                  ? `${((currentStep + 1) / totalQuestions) * 100}%`
                   : '100%'
               }}
             ></div>
@@ -538,7 +573,7 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
         </div>
 
         {/* Content */}
-        {currentStep < allQuestions.length ? (
+        {currentStep < totalQuestions ? (
           <div className="space-y-3 sm:space-y-4 md:space-y-6">
             <div className="text-center">
               <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white mb-3 sm:mb-4">
@@ -557,11 +592,11 @@ const EventSurvey = ({ event, isOpen, onClose, onSubmit }) => {
                 Anterior
               </button>
               <button
-                onClick={currentStep === allQuestions.length - 1 ? handleSubmit : handleNext}
+                onClick={currentStep === totalQuestions - 1 ? handleSubmit : handleNext}
                 disabled={!answers[allQuestions[currentStep].id]}
                 className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:from-primary-700 hover:to-purple-700 transition-all duration-300 text-xs sm:text-sm md:text-base"
               >
-                {currentStep === allQuestions.length - 1 ? 'Enviar Encuesta' : 'Siguiente'}
+                {currentStep === totalQuestions - 1 ? 'Enviar Encuesta' : 'Siguiente'}
               </button>
             </div>
           </div>

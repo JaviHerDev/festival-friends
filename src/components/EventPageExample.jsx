@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Calendar, Users, Trophy, BarChart3, Bell } from 'lucide-react';
 import EventSurvey from './EventSurvey.jsx';
 import SurveyStats from './SurveyStats.jsx';
-import SurveyNotification from './SurveyNotification.jsx';
+
 
 const EventPageExample = () => {
   const [showSurvey, setShowSurvey] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showNotification, setShowNotification] = useState(true);
+
   const [surveySubmitted, setSurveySubmitted] = useState(false);
 
   const event = {
@@ -27,10 +27,7 @@ const EventPageExample = () => {
     // Aquí se guardaría en la base de datos
   };
 
-  const handleTakeSurvey = () => {
-    setShowNotification(false);
-    setShowSurvey(true);
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-black p-8">
@@ -179,12 +176,7 @@ const EventPageExample = () => {
         onClose={() => setShowStats(false)}
       />
 
-      <SurveyNotification
-        event={event}
-        isOpen={showNotification}
-        onClose={() => setShowNotification(false)}
-        onTakeSurvey={handleTakeSurvey}
-      />
+
     </div>
   );
 };

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import FestivalsList from './FestivalsList.jsx';
 import CreateFestivalModal from './CreateFestivalModal.jsx';
 import FestivalDetailsModal from './FestivalDetailsModal.jsx';
-import ConfirmationModal from './ConfirmationModal.jsx';
 
 
 
@@ -12,20 +11,19 @@ const FestivalsPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedFestival, setSelectedFestival] = useState(null);
-  const [isDraftConfirmationOpen, setIsDraftConfirmationOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Restore state from localStorage after hydration
   useEffect(() => {
     setIsHydrated(true);
     
-    // Restore modal states
-    const savedCreateModal = localStorage.getItem('festivals_create_modal_open') === 'true';
-    const savedDetailsModal = localStorage.getItem('festivals_details_modal_open') === 'true';
+    // Clean up any residual modal states
+    localStorage.removeItem('festivals_create_modal_open');
+    localStorage.removeItem('festivals_details_modal_open');
+    
+    // Only restore selected festival, not modal states
     const savedFestival = localStorage.getItem('festivals_selected_festival');
     
-    if (savedCreateModal) setIsCreateModalOpen(true);
-    if (savedDetailsModal) setIsDetailsModalOpen(true);
     if (savedFestival) {
       try {
         setSelectedFestival(JSON.parse(savedFestival));
@@ -36,18 +34,7 @@ const FestivalsPage = () => {
     }
   }, []);
 
-  // Persist modal state to localStorage (only after hydration)
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem('festivals_create_modal_open', isCreateModalOpen.toString());
-    }
-  }, [isCreateModalOpen, isHydrated]);
 
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem('festivals_details_modal_open', isDetailsModalOpen.toString());
-    }
-  }, [isDetailsModalOpen, isHydrated]);
 
   useEffect(() => {
     if (isHydrated) {
@@ -62,38 +49,28 @@ const FestivalsPage = () => {
 
 
   const handleCloseCreateModal = () => {
-    // Clear draft when manually closing modal (only for new festivals)
-    if (!selectedFestival && isHydrated) {
-      const hasDraft = localStorage.getItem('festival_form_draft');
-      if (hasDraft) {
-        // Show confirmation modal instead of browser alert
-        setIsDraftConfirmationOpen(true);
-        return; // Don't close modal yet
-      }
-    }
-    
+    console.log('🔍 handleCloseCreateModal called - CLOSING MODAL');
     setIsCreateModalOpen(false);
     setSelectedFestival(null);
+    
+    // Clean up localStorage
+    if (isHydrated) {
+      localStorage.removeItem('festivals_create_modal_open');
+      localStorage.removeItem('festivals_details_modal_open');
+    }
   };
 
-  const handleDraftConfirmation = (keepDraft) => {
-    if (isHydrated) {
-      if (!keepDraft) {
-        localStorage.removeItem('festival_form_draft');
-        console.log('🗑️ Form draft discarded by user');
-      } else {
-        console.log('💾 Form draft kept by user choice');
-      }
-    }
-    
-    setIsCreateModalOpen(false);
-    setSelectedFestival(null);
-    setIsDraftConfirmationOpen(false);
-  };
+
 
   const handleCloseDetailsModal = () => {
     setIsDetailsModalOpen(false);
     setSelectedFestival(null);
+    
+    // Clean up localStorage
+    if (isHydrated) {
+      localStorage.removeItem('festivals_create_modal_open');
+      localStorage.removeItem('festivals_details_modal_open');
+    }
   };
 
   const handleEditFestival = (festival) => {
@@ -136,16 +113,7 @@ const FestivalsPage = () => {
         festival={selectedFestival}
       />
 
-      <ConfirmationModal
-        isOpen={isDraftConfirmationOpen}
-        onClose={() => setIsDraftConfirmationOpen(false)}
-        onConfirm={() => handleDraftConfirmation(false)}
-        title="💾 Guardar Progreso"
-        message="¿Quieres guardar tu progreso para continuar más tarde?\n\nSi eliges 'Descartar', se perderán los datos del formulario."
-        confirmText="Descartar"
-        cancelText="Guardar"
-        confirmVariant="danger"
-      />
+
     </>
   );
 };

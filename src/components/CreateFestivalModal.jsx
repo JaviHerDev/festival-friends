@@ -99,6 +99,26 @@ const CreateFestivalModal = ({ isOpen, onClose, festival = null }) => {
     }
   }, [formData, imagePreview, festival]);
 
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
   // Initialize form when editing
   useEffect(() => {
     if (festival) {
@@ -306,7 +326,14 @@ const CreateFestivalModal = ({ isOpen, onClose, festival = null }) => {
   if (!isOpen) return null;
 
   return (
-          <div className="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div 
+      className="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="p-4 w-full h-full flex items-center justify-center">
         <div className="bg-slate-900/95 backdrop-blur-lg border border-slate-600/70 sm:max-w-lg w-full max-h-[90vh] flex flex-col rounded-xl shadow-2xl">
         {/* Header */}
@@ -316,9 +343,10 @@ const CreateFestivalModal = ({ isOpen, onClose, festival = null }) => {
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
+            aria-label="Cerrar modal"
           >
-                            <X className="h-5 w-5 text-slate-400" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -580,6 +608,7 @@ const CreateFestivalModal = ({ isOpen, onClose, festival = null }) => {
             onClick={onClose}
             className="btn-secondary"
             disabled={isLoading}
+            aria-label="Cancelar y cerrar modal"
           >
             Cancelar
           </button>

@@ -306,40 +306,43 @@ const LoginModal = () => {
     if (error) {
       setError(error.message);
       toast.error('Error al crear la cuenta', error.message || 'Ha ocurrido un error inesperado. Inténtalo de nuevo.');
-    } else {
-      // Subir avatar si se seleccionó uno
-      if (avatarFile && data?.user) {
-        setIsUploadingAvatar(true);
-        const { data: uploadData, error: uploadError } = await uploadAvatar(data.user.id, avatarFile);
-        
-        if (uploadError) {
-          console.error('Error uploading avatar:', uploadError);
-          toast.warning('Advertencia', 'La cuenta se creó pero no se pudo subir el avatar. Puedes actualizarlo más tarde.');
-        } else {
-          // Actualizar el perfil con la URL del avatar
-          avatarUrl = uploadData.publicUrl;
-          
-          // Actualizar el perfil del usuario en Supabase con la URL del avatar
-          const { error: updateError } = await updateUserProfile(data.user.id, {
-            avatar_url: avatarUrl
-          });
-          
-          if (updateError) {
-            console.error('Error updating user profile with avatar:', updateError);
-            toast.warning('Advertencia', 'La cuenta se creó y el avatar se subió, pero no se pudo actualizar el perfil. El avatar estará disponible después de confirmar tu email.');
-          } else {
-            console.log('User profile updated with avatar URL:', avatarUrl);
-          }
-        }
-        setIsUploadingAvatar(false);
-      }
-      
-      setError('');
-      toast.success('¡Cuenta creada exitosamente!', 'Revisa tu email para confirmar tu cuenta y poder iniciar sesión.', { duration: 7000 });
-      setLoginModalOpen(false);
-      setIsSignUp(false);
-      resetForm();
+      setIsLoading(false);
+      return;
     }
+    
+    // Guardar el archivo de avatar en localStorage para subirlo después de confirmar email
+    if (avatarFile && data?.user) {
+      try {
+        // Convertir el archivo a base64 para guardarlo temporalmente
+        const reader = new FileReader();
+        reader.onload = () => {
+          const avatarData = {
+            file: reader.result,
+            name: avatarFile.name,
+            type: avatarFile.type,
+            userId: data.user.id,
+            timestamp: Date.now()
+          };
+          
+          // Guardar en localStorage con una clave única
+          const storageKey = `pending_avatar_${data.user.id}`;
+          localStorage.setItem(storageKey, JSON.stringify(avatarData));
+          
+          console.log('📁 Avatar file saved to localStorage for later upload');
+          toast.info('Avatar guardado', 'Tu foto de perfil se subirá automáticamente después de confirmar tu email.');
+        };
+        reader.readAsDataURL(avatarFile);
+      } catch (error) {
+        console.error('Error saving avatar to localStorage:', error);
+        toast.warning('Advertencia', 'La cuenta se creó pero no se pudo guardar el avatar. Puedes subirlo más tarde desde tu perfil.');
+      }
+    }
+    
+    setError('');
+    toast.success('¡Cuenta creada exitosamente!', 'Revisa tu email para confirmar tu cuenta y poder iniciar sesión.', { duration: 7000 });
+    setLoginModalOpen(false);
+    setIsSignUp(false);
+    resetForm();
     setIsLoading(false);
   };
 

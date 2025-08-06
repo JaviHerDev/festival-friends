@@ -7,7 +7,7 @@ import Lightbox from './Lightbox.jsx';
 import { toast } from '../store/toastStore.js';
 import EventSurvey from './EventSurvey.jsx';
 import SurveyStats from './SurveyStats.jsx';
-import SurveyNotification from './SurveyNotification.jsx';
+
 import UserAvatar from './UserAvatar.jsx';
 
 const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
@@ -18,7 +18,7 @@ const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
   const [localCurrentStatus, setLocalCurrentStatus] = useState('');
   const [showSurvey, setShowSurvey] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
+
   const [localFestival, setLocalFestival] = useState(null);
   const [hasSubmittedSurvey, setHasSubmittedSurvey] = useState(false);
   const [isCheckingSurvey, setIsCheckingSurvey] = useState(false);
@@ -46,14 +46,7 @@ const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
           const { data: hasSubmitted } = await checkSurveySubmitted(festival.id);
           setHasSubmittedSurvey(hasSubmitted || false);
           
-          // Show notification if user hasn't submitted and survey is available
-          if (!hasSubmitted && isOpen) {
-            const timer = setTimeout(() => {
-              setShowNotification(true);
-            }, 2000);
-            
-            return () => clearTimeout(timer);
-          }
+
         } catch (error) {
           console.error('Error checking survey status:', error);
           setHasSubmittedSurvey(false);
@@ -638,12 +631,7 @@ const FestivalDetailsModal = ({ isOpen, onClose, festival }) => {
         onClose={() => setShowStats(false)}
       />
 
-      <SurveyNotification
-        event={localFestival}
-        isOpen={showNotification}
-        onClose={() => setShowNotification(false)}
-        onTakeSurvey={() => setShowSurvey(true)}
-      />
+
     </div>
   );
 };
