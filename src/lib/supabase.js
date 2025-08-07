@@ -377,4 +377,48 @@ export const userExists = async (userId) => {
   } catch (err) {
     return { exists: false, error: err };
   }
+};
+
+// Search functions
+export const searchUsers = async (searchTerm, limit = 10) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      id, 
+      name, 
+      nickname, 
+      city, 
+      avatar_url, 
+      bio,
+      phone,
+      email,
+      instagram,
+      twitter,
+      nexus_person,
+      key_phrase,
+      created_at,
+      updated_at
+    `)
+    .or(`name.ilike.%${searchTerm}%,nickname.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`)
+    .limit(limit);
+  
+  return { data, error };
+};
+
+export const searchFestivals = async (searchTerm, limit = 10) => {
+  const { data, error } = await supabase
+    .from('festivals')
+    .select(`
+      *,
+      created_by_user:users!festivals_created_by_fkey(name, nickname),
+      attendances:festival_attendances(
+        user_id,
+        status,
+        user:users(name, nickname, avatar_url)
+      )
+    `)
+    .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`)
+    .limit(limit);
+  
+  return { data, error };
 }; 

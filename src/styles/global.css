@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import menu animations */
+@import './menu-animations.css';
+
 @layer base {
   html {
     scroll-behavior: smooth;

@@ -17,6 +17,9 @@ import { toast } from '../store/toastStore.js';
 import LoginModal from './LoginModal.jsx';
 import NotificationPanel from './NotificationPanel.jsx';
 import ProfileModal from './ProfileModal.jsx';
+import UserProfileModal from './UserProfileModal.jsx';
+import SearchBar from './SearchBar.jsx';
+import FestivalDetailsModal from './FestivalDetailsModal.jsx';
 
 import ToastContainer from './ToastContainer.jsx';
 import { signOut } from '../lib/supabase.js';
@@ -28,7 +31,10 @@ const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
+  const [isFestivalDetailsModalOpen, setIsFestivalDetailsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedFestival, setSelectedFestival] = useState(null);
 
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -58,26 +64,45 @@ const Header = () => {
       if (isUserMenuOpen && !event.target.closest('.user-menu')) {
         setIsUserMenuOpen(false);
       }
-      if (isSearchOpen && !event.target.closest('.search-container')) {
-        setIsSearchOpen(false);
-      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isUserMenuOpen, isSearchOpen]);
+  }, [isUserMenuOpen]);
 
-  // Handle search functionality
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      // Navigate to festivals page with search
-      window.location.href = `/festivals?search=${encodeURIComponent(searchTerm.trim())}`;
-      setIsSearchOpen(false);
-      setSearchTerm('');
+  // Handle search close
+  const handleSearchClose = () => {
+    setIsSearchOpen(false);
+  };
+
+  // Handle search button click (mobile)
+  const handleSearchClick = () => {
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
     }
+    setIsSearchOpen(!isSearchOpen);
+  };
+
+  // Handle notifications click (mobile)
+  const handleNotificationsClick = () => {
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+    setIsNotificationPanelOpen(true);
+  };
+
+  // Handle user click from search
+  const handleUserClick = (user) => {
+    setSelectedUser(user);
+    setIsUserProfileModalOpen(true);
+  };
+
+  // Handle festival click from search
+  const handleFestivalClick = (festival) => {
+    setSelectedFestival(festival);
+    setIsFestivalDetailsModalOpen(true);
   };
 
   useEffect(() => {
@@ -152,10 +177,38 @@ const Header = () => {
 
   // Navigation items configuration
   const navigationItems = [
-    { href: '/', label: 'Inicio', icon: '🏠', iconComponent: Home },
-    { href: '/festivals', label: 'Festivales', icon: '🎪', iconComponent: Calendar },
-    { href: '/friends', label: 'Amigos', icon: '👥', iconComponent: Users },
-    { href: '/connections', label: 'Conexiones', icon: '🌳', iconComponent: MapPin }
+    { 
+      href: '/', 
+      label: 'Inicio', 
+      icon: '🏠', 
+      iconComponent: Home,
+      description: 'Página principal',
+      badge: null
+    },
+    { 
+      href: '/festivals', 
+      label: 'Festivales', 
+      icon: '🎪', 
+      iconComponent: Calendar,
+      description: 'Descubre y crea festivales',
+      badge: null
+    },
+    { 
+      href: '/friends', 
+      label: 'Amigos', 
+      icon: '👥', 
+      iconComponent: Users,
+      description: 'Gestiona tus amigos',
+      badge: null
+    },
+    { 
+      href: '/connections', 
+      label: 'Conexiones', 
+      icon: '🌳', 
+      iconComponent: MapPin,
+      description: 'Visualiza tu red social',
+      badge: null
+    }
   ];
 
   // Check if a navigation item is active
@@ -216,43 +269,59 @@ const Header = () => {
 
             {/* Navigation - Desktop */}
             {user && !isMobile && (
-              <nav className="hidden md:flex space-x-1">
+              <nav className="hidden md:flex space-x-2">
                 {navigationItems.map((item) => {
                   const active = isActive(item.href);
                   return (
                     <a 
                       key={item.href}
                       href={item.href} 
-                      className={`flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-300 group relative overflow-hidden ${
+                      title={item.description}
+                      className={`group relative flex items-center px-3 py-2 rounded-xl font-medium transition-all duration-300 overflow-hidden ${
                         active 
-                          ? 'text-white bg-gradient-to-r from-primary-600/30 to-primary-500/20 border border-primary-400/40 shadow-lg shadow-primary-500/20 backdrop-blur-sm' 
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800/50 hover:shadow-md'
+                          ? 'text-white bg-gradient-to-r from-primary-600/40 to-primary-500/30 border border-primary-400/50 shadow-xl shadow-primary-500/30 backdrop-blur-sm' 
+                          : 'text-slate-300 hover:text-white hover:bg-slate-800/60 hover:shadow-lg hover:scale-105'
                       }`}
                     >
                       {/* Active background glow */}
                       {active && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-transparent menu-active-pulse"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/30 to-transparent menu-active-pulse"></div>
                       )}
                       
-                      <span className={`text-lg transition-all duration-300 relative z-10 mr-2 ${
+                      {/* Icon */}
+                      <span className={`text-xl transition-all duration-300 relative z-10 mr-3 ${
                         active ? 'scale-110 drop-shadow-lg' : 'group-hover:scale-110'
                       }`}>
                         {item.icon}
                       </span>
-                      <span className={`relative z-10 font-semibold ${
+                      
+                      {/* Label */}
+                      <span className={`relative z-10 font-semibold text-sm ${
                         active ? 'drop-shadow-sm' : ''
                       }`}>
                         {item.label}
                       </span>
                       
+                      {/* Badge */}
+                      {item.badge && (
+                        <span className="ml-2 px-2 py-0.5 text-xs bg-primary-500 text-white rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                      
                       {/* Active indicator bar */}
                       {active && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-400 via-primary-300 to-primary-400 rounded-full menu-active-pulse"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-400 via-primary-300 to-primary-400 rounded-full menu-active-pulse"></div>
                       )}
                       
                       {/* Active glow effect */}
                       {active && (
-                        <div className="absolute inset-0 rounded-lg bg-primary-500/10 menu-active-glow"></div>
+                        <div className="absolute inset-0 rounded-xl bg-primary-500/15 menu-active-glow"></div>
+                      )}
+                      
+                      {/* Hover glow effect */}
+                      {!active && (
+                        <div className="absolute inset-0 rounded-xl bg-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       )}
                     </a>
                   );
@@ -267,6 +336,16 @@ const Header = () => {
                   {/* Search button - Mobile */}
                   {isMobile && (
                     <button
+                      onClick={handleSearchClick}
+                      className="p-2 text-slate-400 hover:text-white transition-colors"
+                    >
+                      <Search className="h-5 w-5" />
+                    </button>
+                  )}
+
+                  {/* Search button - Desktop */}
+                  {!isMobile && (
+                    <button
                       onClick={() => setIsSearchOpen(!isSearchOpen)}
                       className="p-2 text-slate-400 hover:text-white transition-colors"
                     >
@@ -276,7 +355,7 @@ const Header = () => {
 
                   {/* Notifications */}
                   <button
-                    onClick={() => setIsNotificationPanelOpen(true)}
+                    onClick={handleNotificationsClick}
                     className="relative p-2 text-slate-400 hover:text-white transition-colors"
                   >
                     {unreadNotifications > 0 ? (
@@ -352,13 +431,22 @@ const Header = () => {
                   {/* Mobile menu button */}
                   <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="sm:hidden p-2 text-slate-400 hover:text-white transition-colors"
+                    className="sm:hidden relative p-2 text-slate-400 hover:text-white transition-all duration-300 group"
                   >
-                    {isMobileMenuOpen ? (
-                      <X className="h-6 w-6" />
-                    ) : (
-                      <Menu className="h-6 w-6" />
-                    )}
+                    <div className="flex flex-col space-y-1">
+                      <div className={`w-5 h-0.5 bg-current transition-all duration-300 ${
+                        isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''
+                      }`}></div>
+                      <div className={`w-5 h-0.5 bg-current transition-all duration-300 ${
+                        isMobileMenuOpen ? 'opacity-0' : ''
+                      }`}></div>
+                      <div className={`w-5 h-0.5 bg-current transition-all duration-300 ${
+                        isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
+                      }`}></div>
+                    </div>
+                    
+                    {/* Hover effect */}
+                    <div className="absolute inset-0 bg-primary-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </button>
                 </>
               ) : (
@@ -375,36 +463,55 @@ const Header = () => {
 
           {/* Mobile Search Bar */}
           {isMobile && isSearchOpen && (
-            <div className="search-container pb-4">
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar festivales, amigos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 text-white placeholder-slate-400 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                  autoFocus
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary-600 text-white p-1 rounded-md hover:bg-primary-500 transition-colors"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </form>
+            <div className="pb-4 relative">
+              {/* Close button for mobile */}
+              <button
+                onClick={handleSearchClose}
+                className="absolute top-2 right-2 p-2 text-slate-400 hover:text-white transition-colors z-10"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              
+              <SearchBar 
+                isOpen={isSearchOpen} 
+                onClose={handleSearchClose} 
+                isMobile={true}
+                onUserClick={handleUserClick}
+                onFestivalClick={handleFestivalClick}
+              />
             </div>
           )}
         </div>
 
+        {/* Desktop Search Overlay */}
+        {user && !isMobile && isSearchOpen && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-start justify-center pt-20">
+            <div className="w-full max-w-2xl mx-4 relative">
+              {/* Close button */}
+              <button
+                onClick={handleSearchClose}
+                className="absolute -top-12 right-0 p-2 text-white hover:text-primary-400 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+              
+              <SearchBar 
+                isOpen={isSearchOpen} 
+                onClose={handleSearchClose} 
+                isMobile={false}
+                onUserClick={handleUserClick}
+                onFestivalClick={handleFestivalClick}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Mobile Navigation Overlay */}
         {user && isMobileMenuOpen && (
           <div className="sm:hidden">
-            {/* Backdrop */}
+            {/* Backdrop - starts below header */}
             <div 
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40"
+              className="fixed top-16 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-sm z-40"
               onClick={() => setIsMobileMenuOpen(false)}
             />
             
@@ -412,14 +519,14 @@ const Header = () => {
             <div className="absolute top-16 left-0 right-0 mobile-menu z-50">
               <div className="px-4 py-6 space-y-6">
                 {/* User Profile Section */}
-                <div className="flex items-center space-x-3 pb-6 border-b border-slate-700/50">
+                <div className="flex items-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50 mb-6">
                   <UserAvatar 
                     user={userProfile} 
                     size="2xl" 
                   />
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="text-base font-medium text-white truncate">
+                  <div className="flex-1 min-w-0 ml-4">
+                    <div className="text-base font-semibold text-white truncate">
                       {userProfile?.name || 'Usuario'}
                     </div>
                     {userProfile?.nickname && (
@@ -427,11 +534,19 @@ const Header = () => {
                         @{userProfile.nickname}
                       </div>
                     )}
+                    {userProfile?.city && (
+                      <div className="text-xs text-slate-500 truncate mt-1">
+                        📍 {userProfile.city}
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Online indicator */}
+                  <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-slate-800"></div>
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="space-y-2">
+                <nav className="space-y-3">
                   {navigationItems.map((item) => {
                     const active = isActive(item.href);
                     return (
@@ -439,27 +554,46 @@ const Header = () => {
                         key={item.href}
                         href={item.href} 
                         onClick={handleMobileNavClick}
-                        className={`flex items-center p-3 rounded-lg font-medium transition-all duration-300 relative overflow-hidden ${
+                        className={`group flex items-center p-3 rounded-xl font-medium transition-all duration-300 relative overflow-hidden ${
                           active 
-                            ? 'text-white bg-gradient-to-r from-primary-600/30 to-primary-500/20 border border-primary-400/40 shadow-lg shadow-primary-500/20' 
-                            : 'text-slate-300 hover:text-white hover:bg-slate-800/50 hover:shadow-md'
+                            ? 'text-white bg-gradient-to-r from-primary-600/40 to-primary-500/30 border border-primary-400/50 shadow-xl shadow-primary-500/30' 
+                            : 'text-slate-300 hover:text-white hover:bg-slate-800/60 hover:shadow-lg'
                         }`}
                       >
                         {/* Active background glow */}
                         {active && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-transparent menu-active-pulse"></div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary-500/30 to-transparent menu-active-pulse"></div>
                         )}
                         
-                        <span className={`text-xl transition-all duration-300 relative z-10 mr-3 ${
-                          active ? 'scale-110 drop-shadow-lg' : ''
+                        {/* Icon */}
+                        <div className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-300 relative z-10 mr-4 ${
+                          active 
+                            ? 'bg-primary-500/20 scale-110 drop-shadow-lg' 
+                            : 'bg-slate-700/50 group-hover:bg-primary-500/10 group-hover:scale-110'
                         }`}>
-                          {item.icon}
-                        </span>
-                        <span className={`relative z-10 font-semibold ${
-                          active ? 'drop-shadow-sm' : ''
-                        }`}>
-                          {item.label}
-                        </span>
+                          <span className="text-xl">
+                            {item.icon}
+                          </span>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 relative z-10">
+                          <div className={`font-semibold ${
+                            active ? 'drop-shadow-sm' : ''
+                          }`}>
+                            {item.label}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            {item.description}
+                          </div>
+                        </div>
+                        
+                        {/* Badge */}
+                        {item.badge && (
+                          <span className="ml-2 px-2 py-0.5 text-xs bg-primary-500 text-white rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
                         
                         {/* Active indicator */}
                         {active && (
@@ -470,7 +604,12 @@ const Header = () => {
                         
                         {/* Active glow effect */}
                         {active && (
-                          <div className="absolute inset-0 rounded-lg bg-primary-500/10 menu-active-glow"></div>
+                          <div className="absolute inset-0 rounded-xl bg-primary-500/15 menu-active-glow"></div>
+                        )}
+                        
+                        {/* Hover glow effect */}
+                        {!active && (
+                          <div className="absolute inset-0 rounded-xl bg-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         )}
                       </a>
                     );
@@ -481,18 +620,28 @@ const Header = () => {
                 <div className="space-y-3 pt-6 border-t border-slate-700/50">
                   <button
                     onClick={handleOpenProfile}
-                    className="flex items-center space-x-3 w-full p-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors"
+                    className="group flex items-center w-full p-4 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-xl transition-all duration-300"
                   >
-                    <Settings className="h-5 w-5" />
-                    <span>Mi Perfil</span>
+                    <div className="flex items-center justify-center w-10 h-10 bg-slate-700/50 group-hover:bg-primary-500/10 rounded-lg mr-4 transition-colors">
+                      <Settings className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold">Mi Perfil</div>
+                      <div className="text-xs text-slate-400">Editar información personal</div>
+                    </div>
                   </button>
                   
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center space-x-3 w-full p-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors"
+                    className="group flex items-center w-full p-4 text-slate-300 hover:text-white hover:bg-red-500/10 rounded-xl transition-all duration-300"
                   >
-                    <LogOut className="h-5 w-5" />
-                    <span>Cerrar Sesión</span>
+                    <div className="flex items-center justify-center w-10 h-10 bg-slate-700/50 group-hover:bg-red-500/10 rounded-lg mr-4 transition-colors">
+                      <LogOut className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold">Cerrar Sesión</div>
+                      <div className="text-xs text-slate-400">Salir de tu cuenta</div>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -508,6 +657,24 @@ const Header = () => {
       <ProfileModal 
         isOpen={isProfileModalOpen} 
         onClose={() => setProfileModalOpen(false)} 
+      />
+
+      <UserProfileModal 
+        isOpen={isUserProfileModalOpen} 
+        onClose={() => {
+          setIsUserProfileModalOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
+
+      <FestivalDetailsModal 
+        festival={selectedFestival}
+        isOpen={isFestivalDetailsModalOpen} 
+        onClose={() => {
+          setIsFestivalDetailsModalOpen(false);
+          setSelectedFestival(null);
+        }} 
       />
 
       <ToastContainer />
