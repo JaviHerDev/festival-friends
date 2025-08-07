@@ -49,12 +49,6 @@ export const signIn = async (email, password) => {
     email,
     password,
   });
-  
-  // Si el login fue exitoso, verificar si hay avatares pendientes
-  if (data?.user && !error) {
-    await processPendingAvatar(data.user.id);
-  }
-  
   return { data, error };
 };
 
@@ -279,66 +273,9 @@ export const updateUserProfile = async (userId, profileData) => {
   return { data, error };
 };
 
-// Función para procesar avatares pendientes del localStorage
-export const processPendingAvatar = async (userId) => {
+// Nueva función para subir avatar
+export const uploadAvatar = async (userId, file) => {
   try {
-    const storageKey = `pending_avatar_${userId}`;
-    const pendingAvatarData = localStorage.getItem(storageKey);
-    
-    if (!pendingAvatarData) {
-      return; // No hay avatar pendiente
-    }
-    
-    const avatarData = JSON.parse(pendingAvatarData);
-    
-    // Verificar que el avatar no sea muy antiguo (máximo 24 horas)
-    const maxAge = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
-    if (Date.now() - avatarData.timestamp > maxAge) {
-      console.log('🗑️ Removing expired pending avatar');
-      localStorage.removeItem(storageKey);
-      return;
-    }
-    
-    console.log('🔄 Processing pending avatar for user:', userId);
-    
-    // Convertir base64 de vuelta a File
-    const response = await fetch(avatarData.file);
-    const blob = await response.blob();
-    const file = new File([blob], avatarData.name, { type: avatarData.type });
-    
-    // Subir el avatar
-    const { data: uploadData, error: uploadError } = await uploadAvatarFile(userId, file);
-    
-    if (uploadError) {
-      console.error('❌ Error uploading pending avatar:', uploadError);
-      return;
-    }
-    
-    // Actualizar el perfil con la URL del avatar
-    const { error: updateError } = await updateUserProfile(userId, {
-      avatar_url: uploadData.publicUrl
-    });
-    
-    if (updateError) {
-      console.error('❌ Error updating profile with pending avatar:', updateError);
-      return;
-    }
-    
-    // Limpiar el localStorage
-    localStorage.removeItem(storageKey);
-    console.log('✅ Pending avatar processed successfully');
-    
-  } catch (error) {
-    console.error('❌ Error processing pending avatar:', error);
-  }
-};
-
-// Función interna para subir avatar
-const uploadAvatarFile = async (userId, file) => {
-  try {
-    console.log('🔄 Starting avatar upload for user:', userId);
-    console.log('📁 File details:', { name: file.name, size: file.size, type: file.type });
-    
     // Validar archivo
     if (!file.type.startsWith('image/')) {
       throw new Error('El archivo debe ser una imagen');
@@ -351,25 +288,8 @@ const uploadAvatarFile = async (userId, file) => {
     // Crear nombre único
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}_${Date.now()}.${fileExt}`;
-    console.log('📝 Generated filename:', fileName);
-
-    // Verificar que el bucket existe
-    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-    if (bucketError) {
-      console.error('❌ Error listing buckets:', bucketError);
-      throw new Error('Error al verificar el bucket de storage');
-    }
-    
-    const avatarsBucket = buckets.find(bucket => bucket.name === 'avatars');
-    if (!avatarsBucket) {
-      console.error('❌ Avatars bucket not found');
-      throw new Error('El bucket de avatares no existe');
-    }
-    
-    console.log('✅ Avatars bucket found:', avatarsBucket);
 
     // Subir archivo
-    console.log('📤 Uploading file to storage...');
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(fileName, file, {
@@ -378,29 +298,20 @@ const uploadAvatarFile = async (userId, file) => {
       });
 
     if (uploadError) {
-      console.error('❌ Upload error:', uploadError);
       throw uploadError;
     }
-
-    console.log('✅ File uploaded successfully:', uploadData);
 
     // Obtener URL pública
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
       .getPublicUrl(fileName);
 
-    console.log('🔗 Generated public URL:', publicUrl);
-
     return { data: { publicUrl }, error: null };
 
   } catch (error) {
-    console.error('❌ Error in uploadAvatar:', error);
     return { data: null, error };
   }
 };
-
-// Función wrapper exportada para subir avatar
-export const uploadAvatar = uploadAvatarFile;
 
 // Función para eliminar usuario de forma segura
 export const deleteUser = async (userId) => {
