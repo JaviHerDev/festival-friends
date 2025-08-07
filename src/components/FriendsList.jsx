@@ -22,6 +22,17 @@ const FriendsList = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [userBadgesMap, setUserBadgesMap] = useState({});
   const [badgesLoading, setBadgesLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleOpenProfile = (user) => {
     setSelectedUser(user);
@@ -87,6 +98,18 @@ const FriendsList = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+            👥 Amigos
+          </h1>
+          <p className="text-slate-400 text-sm sm:text-base">
+            Conecta con otros festivaleros y prepárate para lo que viene
+          </p>
+        </div>
+      </div>
+
       {/* Search bar */}
       <div className="relative">
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -125,7 +148,7 @@ const FriendsList = () => {
 
       {/* Users grid */}
       {!isLoading && filteredUsers.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {filteredUsers.map(friend => (
             <UserCard 
               key={friend.id} 
@@ -347,62 +370,67 @@ const UserCard = ({ user, userBadges, badgesLoading, onOpenProfile }) => {
   };
   
   return (
-    <div className={`group bg-slate-800/50 border rounded-xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg user-card ${
+    <div className={`group bg-slate-800/80 backdrop-blur-sm border-2 rounded-2xl p-5 sm:p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl user-card flex flex-col ${
       isCurrentUser 
-        ? 'border-primary-500/50 bg-primary-500/10 hover:border-primary-400/70 hover:bg-primary-500/20 hover:shadow-primary-500/20' 
-        : 'border-slate-700/50 hover:border-primary-500/30 hover:bg-slate-800/70 hover:shadow-primary-500/10'
+        ? 'border-primary-500/50 bg-primary-500/10 hover:border-primary-400/70 hover:bg-primary-500/20 hover:shadow-primary-500/30' 
+        : 'border-primary-500/30 hover:border-primary-400/50 hover:bg-slate-800/90 hover:shadow-primary-500/20'
     }`}>
       
-      {/* Header with avatar and basic info */}
-      <div className="flex items-start space-x-4 mb-4">
-        {/* Avatar */}
-        <div className="relative flex-shrink-0">
-          <UserAvatar 
-            user={user} 
-            size="xl" 
-            className="group-hover:border-primary-400/50 transition-colors duration-300"
-          />
-          
-          {/* Online status */}
-          <div className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full"></div>
-          
-          {/* City below avatar */}
-          {user.city && (
-            <div className="flex items-center justify-center space-x-1 text-xs text-slate-400 mt-2">
-              <MapPinIcon className="h-3 w-3" />
-              <span className="truncate">{user.city}</span>
-            </div>
-          )}
-        </div>
+      {/* Content container */}
+      <div className="flex-1">
+        {/* Header with avatar and basic info */}
+        <div className="flex items-start space-x-4 sm:space-x-5 mb-5">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <UserAvatar 
+              user={user} 
+              size={isMobile ? "2xl" : "2xl"}
+              className="group-hover:border-primary-400/50 transition-colors duration-300"
+            />
+            
+            {/* Online status */}
+            <div className="absolute -top-1 -left-1 w-5 h-5 sm:w-5 sm:h-5 bg-green-500 border-2 border-slate-800 rounded-full"></div>
+          </div>
 
-        {/* Name and contact info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2">
-            <h3 className="text-lg font-semibold text-white group-hover:text-primary-300 transition-colors duration-300 truncate">
-              {user.name}
-            </h3>
-            {isCurrentUser && (
-              <span className="px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded-full">
-                Tú
-              </span>
+          {/* Name and contact info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2 mb-2">
+              <h3 className="text-lg sm:text-xl font-semibold text-white group-hover:text-primary-300 transition-colors duration-300 break-words">
+                {user.name}
+              </h3>
+              {isCurrentUser && (
+                <span className="px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded-full flex-shrink-0">
+                  Tú
+                </span>
+              )}
+            </div>
+            
+            {user.nickname && (
+              <p className="text-primary-400 text-sm font-medium break-words mb-2">
+                @{user.nickname}
+              </p>
+            )}
+            
+            {/* City below nickname */}
+            {user.city && (
+              <div className="flex items-center space-x-1 text-xs text-slate-300">
+                <MapPinIcon className="h-3 w-3 text-primary-400 flex-shrink-0" />
+                <span className="break-words">{user.city}</span>
+              </div>
             )}
           </div>
-          
-          {user.nickname && (
-            <p className="text-primary-400 text-sm font-medium truncate">
-              @{user.nickname}
-            </p>
-          )}
-          
-          {/* Contact icons below name and nickname */}
-          <div className="flex items-center space-x-3 mt-2">
+        </div>
+
+        {/* Social Media Icons - Enhanced mobile design */}
+        {(user.phone || user.instagram || user.twitter) && (
+          <div className="flex items-center justify-center space-x-4 mt-4">
             {user.phone && (
               <a
                 href={`tel:${user.phone}`}
-                className="text-slate-400 hover:text-blue-400 transition-colors duration-200"
+                className="w-10 h-10 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
                 title="Llamar"
               >
-                <PhoneIcon className="w-4 h-4" />
+                <PhoneIcon className="w-5 h-5 sm:w-4 sm:h-4" />
               </a>
             )}
             
@@ -411,10 +439,10 @@ const UserCard = ({ user, userBadges, badgesLoading, onOpenProfile }) => {
                 href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-400 hover:text-green-400 transition-colors duration-200"
+                className="w-10 h-10 sm:w-8 sm:h-8 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
                 title="Contactar por WhatsApp"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-5 h-5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
                 </svg>
               </a>
@@ -425,10 +453,10 @@ const UserCard = ({ user, userBadges, badgesLoading, onOpenProfile }) => {
                 href={`https://www.instagram.com/${user.instagram.replace(/^@/, '')}/`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-400 hover:text-pink-400 transition-colors duration-200"
+                className="w-10 h-10 sm:w-8 sm:h-8 bg-gradient-to-br from-pink-500 via-purple-500 to-orange-500 hover:from-pink-400 hover:via-purple-400 hover:to-orange-400 text-white rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
                 title="Instagram"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-5 h-5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                 </svg>
               </a>
@@ -439,135 +467,147 @@ const UserCard = ({ user, userBadges, badgesLoading, onOpenProfile }) => {
                 href={`https://x.com/${user.twitter.replace(/^@/, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-400 hover:text-blue-400 transition-colors duration-200"
+                className="w-10 h-10 sm:w-8 sm:h-8 bg-gradient-to-br from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
                 title="X (Twitter)"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-5 h-5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
               </a>
             )}
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Bio section */}
-      {user.bio && (
-        <div className="mb-4">
-          <p className="text-sm text-slate-300 leading-relaxed line-clamp-2 group-hover:text-slate-200 transition-colors duration-300">
-            {user.bio}
-          </p>
-        </div>
-      )}
-
-      {/* Key phrase */}
-      {user.key_phrase && (
-        <div className="mb-4 bg-primary-500/10 rounded-lg p-3 border border-primary-500/20">
-          <p className="text-xs text-primary-300 italic line-clamp-2">
-            💭 "{user.key_phrase}"
-          </p>
-        </div>
-      )}
-
-
-
-      {/* Connection info - subtle */}
-      {user.nexus_person && (
-        <div className="mb-4 text-xs text-slate-400">
-          🔗 Conectado a través de <span className="text-primary-300 font-medium">{user.nexus_person}</span>
-        </div>
-      )}
-
-      {/* Badges section */}
-      {badgesLoading ? (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-medium">🏆 Insignias</span>
-            <div className="animate-spin h-3 w-3 border border-primary-500 border-t-transparent rounded-full"></div>
+        {/* Bio section - Clean and minimal */}
+        {user.bio && (
+          <div className="mt-6">
+            <p className="text-sm text-white/90 leading-relaxed break-words group-hover:text-white transition-colors duration-300">
+              {user.bio}
+            </p>
           </div>
-        </div>
-      ) : userBadges.length > 0 ? (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-medium">🏆 Insignias</span>
-            <span className="text-xs text-primary-300">{userBadges.length}</span>
+        )}
+
+        {/* Key phrase - Attractive design */}
+        {user.key_phrase && (
+          <div className="mt-6 p-4 bg-gradient-to-r from-primary-500/20 via-purple-500/20 to-pink-500/20 rounded-xl border border-primary-500/30 backdrop-blur-sm shadow-lg">
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl text-primary-300">💭</span>
+              <div className="flex-1">
+                <p className="text-sm text-primary-200 italic break-words font-medium leading-relaxed">
+                  "{user.key_phrase}"
+                </p>
+                <p className="text-xs text-primary-400/70 mt-1">Frase clave</p>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-row gap-2">
-            {userBadges.slice(0, 3).map((badge) => {
-              const rarity = badge.badge_definitions?.rarity;
-              const dotColor =
-                rarity === 'legendary' ? 'bg-yellow-400' :
-                rarity === 'epic' ? 'bg-purple-400' :
-                rarity === 'rare' ? 'bg-blue-400' :
-                'bg-gray-400';
-              return (
-                <button
-                  key={badge.id}
+        )}
+
+        {/* Connection info - Subtle and clean */}
+        {user.nexus_person && (
+          <div className="mt-4 flex items-center space-x-2">
+            <span className="text-primary-400 text-xs">🔗</span>
+            <span className="text-xs text-slate-400">Conectado a través de</span>
+            <span className="text-xs text-primary-300 font-medium break-words">{user.nexus_person}</span>
+          </div>
+        )}
+
+        {/* Badges section - Back in box */}
+        {badgesLoading ? (
+          <div className="mt-6 p-4 bg-slate-700/30 border border-slate-600/30 rounded-xl backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-white/90 font-semibold flex items-center space-x-2">
+                <span>🏆</span>
+                <span>Insignias</span>
+              </span>
+              <div className="animate-spin h-4 w-4 border-2 border-primary-500 border-t-transparent rounded-full"></div>
+            </div>
+          </div>
+        ) : userBadges.length > 0 ? (
+          <div className="mt-6 p-4 bg-slate-700/30 border border-slate-600/30 rounded-xl backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-white/90 font-semibold flex items-center space-x-2">
+                <span>🏆</span>
+                <span>Insignias</span>
+              </span>
+              <span className="text-sm text-primary-300 font-bold">{userBadges.length}</span>
+            </div>
+            <div className="flex flex-row gap-4">
+              {userBadges.slice(0, 3).map((badge) => {
+                const rarity = badge.badge_definitions?.rarity;
+                const dotColor =
+                  rarity === 'legendary' ? 'bg-yellow-400' :
+                  rarity === 'epic' ? 'bg-purple-400' :
+                  rarity === 'rare' ? 'bg-blue-400' :
+                  'bg-gray-400';
+                return (
+                  <button
+                    key={badge.id}
+                    tabIndex={0}
+                    aria-label={`${badge.badge_definitions?.name}: ${badge.badge_definitions?.description}`}
+                    className="relative group/badge p-3 rounded-xl border-2 bg-slate-700/60 hover:scale-110 focus:scale-110 transition-all duration-300 outline-none border-slate-600/50 min-w-[48px] min-h-[48px] flex items-center justify-center shadow-lg hover:shadow-xl hover:border-primary-400/50 backdrop-blur-sm"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleBadgeClick(badge, e);
+                      }
+                    }}
+                    onClick={(e) => handleBadgeClick(badge, e)}
+                    type="button"
+                  >
+                    <span className="text-2xl" aria-hidden="true">{badge.badge_definitions?.icon}</span>
+                    <span className="sr-only">{badge.badge_definitions?.name}</span>
+                    <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${dotColor} border-2 border-slate-800 shadow-lg`}></span>
+                  
+                    {/* Tooltip solo en desktop */}
+                    {!isMobile && (
+                      <div className={`${getTooltipClasses(tooltipPosition)} bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 shadow-2xl`}>
+                        <div className="font-bold mb-2 text-white">{badge.badge_definitions?.name}</div>
+                        <div className="text-slate-300 mb-2">{badge.badge_definitions?.description}</div>
+                        <div className="text-xs text-primary-400 capitalize font-medium bg-primary-500/20 px-2 py-1 rounded-full inline-block">{badge.badge_definitions?.rarity}</div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+              {userBadges.length > 3 && (
+                <div
                   tabIndex={0}
-                  aria-label={`${badge.badge_definitions?.name}: ${badge.badge_definitions?.description}`}
-                  className="relative group/badge p-2 rounded-lg border bg-slate-700/60 hover:scale-110 focus:scale-110 transition-transform outline-none border-slate-600/50 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                  className="relative group/badge p-3 rounded-xl border-2 bg-slate-700/60 text-sm text-slate-300 font-semibold flex items-center justify-center min-w-[48px] min-h-[48px] border-slate-600/50 outline-none hover:scale-110 focus:scale-110 transition-all duration-300 shadow-lg hover:shadow-xl hover:border-primary-400/50 backdrop-blur-sm"
+                  onClick={() => !isMobile && setSelectedBadge({ type: 'additional', badges: userBadges.slice(3) })}
                   onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (!isMobile && (e.key === 'Enter' || e.key === ' ')) {
                       e.preventDefault();
-                      handleBadgeClick(badge, e);
+                      setSelectedBadge({ type: 'additional', badges: userBadges.slice(3) });
                     }
                   }}
-                  onClick={(e) => handleBadgeClick(badge, e)}
-                  type="button"
                 >
-                  <span className="text-xl" aria-hidden="true">{badge.badge_definitions?.icon}</span>
-                  <span className="sr-only">{badge.badge_definitions?.name}</span>
-                  <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${dotColor}`}></span>
-                  
+                  +{userBadges.length - 3}
                   {/* Tooltip solo en desktop */}
                   {!isMobile && (
-                    <div className={getTooltipClasses(tooltipPosition)}>
-                      <div className="font-bold mb-1">{badge.badge_definitions?.name}</div>
-                      <div>{badge.badge_definitions?.description}</div>
-                      <div className="mt-1 text-[10px] text-primary-400 capitalize">{badge.badge_definitions?.rarity}</div>
+                    <div className="pointer-events-none absolute z-10 left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/badge:opacity-100 group-focus/badge:opacity-100 transition-opacity duration-200 bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 text-white text-xs rounded-xl px-4 py-3 shadow-2xl max-w-xs min-w-[180px] whitespace-normal">
+                      <div className="font-bold mb-2 text-primary-300">Insignias adicionales</div>
+                      {userBadges.slice(3).map(b => (
+                        <div key={b.id} className="flex items-center gap-2 mb-2 last:mb-0 p-2 bg-slate-800/50 rounded-lg">
+                          <span className="text-lg">{b.badge_definitions?.icon}</span>
+                          <div className="flex-1">
+                            <div className="font-medium text-white">{b.badge_definitions?.name}</div>
+                            <div className="text-xs text-primary-400 capitalize">{b.badge_definitions?.rarity}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </button>
-              );
-            })}
-            {userBadges.length > 3 && (
-              <div
-                tabIndex={0}
-                className="relative group/badge p-2 rounded-lg border bg-slate-700/60 text-xs text-slate-400 flex items-center justify-center min-w-[40px] min-h-[40px] border-slate-600/50 outline-none hover:scale-110 focus:scale-110 transition-transform"
-                onClick={() => !isMobile && setSelectedBadge({ type: 'additional', badges: userBadges.slice(3) })}
-                onKeyDown={e => {
-                  if (!isMobile && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    setSelectedBadge({ type: 'additional', badges: userBadges.slice(3) });
-                  }
-                }}
-              >
-                +{userBadges.length - 3}
-                {/* Tooltip solo en desktop */}
-                {!isMobile && (
-                  <div className="pointer-events-none absolute z-10 left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/badge:opacity-100 group-focus/badge:opacity-100 transition-opacity duration-200 bg-slate-900 text-white text-xs rounded px-3 py-2 shadow-lg max-w-xs min-w-[160px] whitespace-normal">
-                    <div className="font-bold mb-1">Insignias adicionales</div>
-                    {userBadges.slice(3).map(b => (
-                      <div key={b.id} className="flex items-center gap-1 mb-1 last:mb-0">
-                        <span className="text-base">{b.badge_definitions?.icon}</span>
-                        <span>{b.badge_definitions?.name}</span>
-                        <span className="ml-1 text-[10px] text-primary-400 capitalize">{b.badge_definitions?.rarity}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-
-
-      {/* View Profile Button - subtle */}
+      {/* View Profile Button - always at bottom */}
       <button
         onClick={() => onOpenProfile(user)}
-        className="w-full btn-primary bg-slate-700/50 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 border border-slate-600/50 hover:border-primary-500/50 text-sm"
+        className="w-full btn-primary bg-slate-700/50 hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 border border-slate-600/50 hover:border-primary-500/50 text-sm mt-8"
       >
         Ver Perfil
       </button>

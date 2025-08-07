@@ -15,6 +15,17 @@ const Footer = ({ showDemo = false }) => {
   const { user } = useStore();
   const currentYear = new Date().getFullYear();
   const [showWachoModal, setShowWachoModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Debug: Check available images and user badges
   useEffect(() => {
@@ -99,8 +110,6 @@ const Footer = ({ showDemo = false }) => {
     }
   };
 
-
-
   return (
     <footer className="border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
       {/* Save The Wacho Banner - Only visible for logged in users */}
@@ -113,12 +122,12 @@ const Footer = ({ showDemo = false }) => {
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-primary-500/5 to-slate-500/5 rounded-full blur-2xl"></div>
           
           {/* Content container with relative positioning */}
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               {/* Left side - Profile and info */}
-              <div className="flex items-center space-x-8">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-8">
                 <div className="relative group">
-                  <div className="w-40 h-40 rounded-2xl overflow-hidden border-2 border-primary-400/50 shadow-2xl group-hover:border-primary-300/80 transition-all duration-500">
+                  <div className={`${isMobile ? 'w-32 h-32' : 'w-40 h-40'} rounded-2xl overflow-hidden border-2 border-primary-400/50 shadow-2xl group-hover:border-primary-300/80 transition-all duration-500`}>
                     <img 
                       src={(() => {
                         const url = supabase.storage.from('frontimages').getPublicUrl('wacho4.png').data.publicUrl;
@@ -142,19 +151,19 @@ const Footer = ({ showDemo = false }) => {
                     <span className="text-xs">🔥</span>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-2xl font-bold text-white">
+                <div className="space-y-2 text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-3">
+                    <h3 className="text-xl sm:text-2xl font-bold text-white">
                       Save The Wacho
                     </h3>
                     <span className="px-3 py-1 bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-300 text-xs font-semibold rounded-full border border-red-500/30">
                       URGENTE
                     </span>
                   </div>
-                  <p className="text-slate-300 text-base leading-relaxed max-w-md">
+                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-md">
                   Apadrina al Wacho en tu tienda campaña y encárgate de sus necesidades básicas para que sobreviva.
                   </p>
-                  <div className="flex items-center space-x-4 text-sm text-slate-400">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-4 text-sm text-slate-400">
                     <span className="flex items-center space-x-1">
                       <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                       <span>Verificado</span>
@@ -168,16 +177,16 @@ const Footer = ({ showDemo = false }) => {
               </div>
               
               {/* Right side - Sponsorship options and button */}
-              <div className="flex flex-col items-center lg:items-center space-y-4">
-                <div className="text-center lg:text-right">
-                  <div className="text-2xl font-bold text-white mb-2">🎯 Misión: Supervivencia</div>
+              <div className="flex flex-col items-center space-y-4">
+                <div className="text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-white mb-2">🎯 Misión: Supervivencia</div>
                   <div className="text-sm text-white mb-3">Apadrina al Wacho en tu tienda campaña</div>
-                  <div className="flex justify-center gap-4 text-sm text-white font-medium">
-                    <div className="flex items-center space-x-1">
+                  <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 text-sm text-white font-medium">
+                    <div className="flex items-center justify-center space-x-1">
                       <span>🥃</span>
                       <span>Dale Whisky</span>
                     </div>
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center justify-center space-x-1">
                       <span>💊</span>
                       <span>Dale M</span>
                     </div>
@@ -186,11 +195,11 @@ const Footer = ({ showDemo = false }) => {
                 
                 <button 
                   onClick={handleApadrinarWacho}
-                  className="group relative bg-gradient-to-r from-primary-600 via-slate-600 to-primary-700 hover:from-primary-700 hover:via-slate-700 hover:to-primary-800 text-white font-bold py-4 px-8 rounded-xl transform hover:scale-110 transition-all duration-300 shadow-2xl hover:shadow-primary-500/50 flex items-center space-x-3 border-2 border-primary-400/30 hover:border-primary-300/50"
+                  className="group relative bg-gradient-to-r from-primary-600 via-slate-600 to-primary-700 hover:from-primary-700 hover:via-slate-700 hover:to-primary-800 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transform hover:scale-110 transition-all duration-300 shadow-2xl hover:shadow-primary-500/50 flex items-center space-x-3 border-2 border-primary-400/30 hover:border-primary-300/50 w-full sm:w-auto justify-center"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-primary-400/30 via-slate-400/30 to-primary-500/30 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse"></div>
-                  <span className="relative z-10 text-2xl animate-bounce">🤝</span>
-                  <span className="relative z-10 text-lg">¡Quiero apadrinar al Wacho!</span>
+                  <span className="relative z-10 text-xl sm:text-2xl animate-bounce">🤝</span>
+                  <span className="relative z-10 text-base sm:text-lg">{isMobile ? '¡Apadrinar!' : '¡Quiero apadrinar al Wacho!'}</span>
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-400 rounded-full animate-ping"></div>
                 </button>
               </div>
@@ -201,25 +210,30 @@ const Footer = ({ showDemo = false }) => {
       )}
       
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Brand Section */}
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1 sm:col-span-2">
             <div className="flex items-center mb-4">
               <a href="/" className="flex items-center space-x-2 select-none">
                 <span className="text-2xl sm:text-3xl">🎸</span>
-                <span className="flex items-center">
-                  <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Festival</span>
-                  <span className="text-white text-xl sm:text-2xl lg:text-3xl font-bold leading-none mx-1">&</span>
-                  <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Friends</span>
-                </span>
+                {!isMobile && (
+                  <span className="flex items-center">
+                    <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Festival</span>
+                    <span className="text-white text-xl sm:text-2xl lg:text-3xl font-bold leading-none mx-1">&</span>
+                    <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Friends</span>
+                  </span>
+                )}
+                {isMobile && (
+                  <span className="gradient-text text-lg font-bold">F&F</span>
+                )}
               </a>
             </div>
-            <p className="text-slate-400 mb-4 max-w-md">
+            <p className="text-slate-400 mb-4 max-w-md text-sm sm:text-base">
               La red social definitiva para amantes de la música. Conecta con tus amigos, descubre festivales épicos 
               y vive la experiencia musical como nunca antes.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
               <div className="flex items-center space-x-2 text-slate-500 hover:text-primary-400 transition-colors">
                 <Users className="h-4 w-4" />
                 <span className="text-sm">Comunidad</span>
@@ -320,11 +334,11 @@ const Footer = ({ showDemo = false }) => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-slate-700/50 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
-          <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-            <p className="text-slate-500 text-sm">
+        <div className="border-t border-slate-700/50 mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+          <div className="flex items-center space-x-4">
+            <p className="text-slate-500 text-xs sm:text-sm text-center sm:text-left">
               &copy; {currentYear} Festival&Friends. By JaviMurcia con 
-              <Heart className="inline-block h-4 w-4 mx-2 mb-1 text-red-500" /> 
+              <Heart className="inline-block h-3 w-3 sm:h-4 sm:w-4 mx-2 mb-1 text-red-500" /> 
               para la crew festivalera.
             </p>
           </div>

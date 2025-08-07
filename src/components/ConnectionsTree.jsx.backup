@@ -31,8 +31,7 @@ import {
   SparklesIcon,
   BoltIcon,
   HeartIcon,
-  StarIcon,
-  XMarkIcon
+  StarIcon
 } from '@heroicons/react/24/outline';
 import useStore from '../store/useStore.js';
 
@@ -44,8 +43,9 @@ import useStore from '../store/useStore.js';
   return (
                             <div 
                           className={`
-                            relative group cursor-pointer transition-all duration-300 hover:scale-105
+                            relative group cursor-pointer transition-all duration-300
                             ${selected ? 'scale-110' : ''}
+                            ${isCurrentUser ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
                           `}
     >
       {/* Glow effect for current user */}
@@ -55,15 +55,13 @@ import useStore from '../store/useStore.js';
       
       {/* Glassmorphism Card */}
                                 <div className={`
-                            relative overflow-hidden rounded-2xl p-5 min-w-[240px] max-w-[300px] h-[140px]
+                            relative overflow-hidden rounded-2xl p-4 min-w-[220px] max-w-[280px]
                             bg-gradient-to-br from-slate-800/95 to-slate-900/95
-                            border backdrop-blur-sm
+                            border border-slate-700/50 backdrop-blur-sm
                             shadow-2xl transition-all duration-300
-                            hover:shadow-purple-500/20 hover:border-purple-500/30
-                            ${selected ? 'border-2 border-purple-500/50 shadow-purple-500/25' : ''}
-                            ${isCurrentUser ? 'border-2 border-blue-500/50 shadow-blue-500/25' : ''}
-                            ${data.level === 0 ? 'border-2 border-green-500/50 shadow-green-500/25' : ''}
-                            ${!selected && !isCurrentUser && data.level !== 0 ? 'border border-slate-700/50' : ''}
+                            ${selected ? 'border-purple-500/50 shadow-purple-500/25' : ''}
+                            ${isCurrentUser ? 'border-blue-500/50 shadow-blue-500/25' : ''}
+                            ${data.level === 0 ? 'border-green-500/50 shadow-green-500/25' : ''}
                             
                           `}>
         
@@ -71,26 +69,30 @@ import useStore from '../store/useStore.js';
         
         
         {/* User Info */}
-        <div className="relative z-10 flex items-start space-x-5">
+        <div className="relative z-10 flex items-start space-x-4">
           {/* Enhanced Avatar */}
           <div className="relative flex-shrink-0">
             <div className={`
-              w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl
+              w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl
               ${data.avatar_url ? 'bg-cover bg-center' : 'bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600'}
               shadow-lg border-2 border-slate-600/50
-              transition-all duration-300
+                                          transition-all duration-300
             `}
             style={data.avatar_url ? { backgroundImage: `url(${data.avatar_url})` } : {}}
             >
               {!data.avatar_url && (data.name?.charAt(0) || 'U').toUpperCase()}
             </div>
             
-            {/* Connection Count Badge */}
-            {data.connectionCount > 0 && (
-              <div className="absolute -top-2 -left-2 w-7 h-7 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                <span className="text-xs font-bold text-white">{data.connectionCount}</span>
-              </div>
-            )}
+            
+            
+                          {/* Connection Count Badge */}
+              {data.connectionCount > 0 && (
+                <div className="absolute -top-1 -left-1 w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
+                  <span className="text-xs font-bold text-white">{data.connectionCount}</span>
+                </div>
+              )}
+            
+            
           </div>
           
           {/* User Details */}
@@ -119,7 +121,24 @@ import useStore from '../store/useStore.js';
               </div>
             )}
             
-
+            {/* Connection strength indicator */}
+            <div className="flex items-center space-x-1">
+              <div className="flex space-x-1">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-1 h-3 rounded-full transition-all duration-300 ${
+                      i < Math.min(data.connectionCount, 5) 
+                        ? 'bg-gradient-to-t from-purple-400 to-pink-400' 
+                        : 'bg-slate-600'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-slate-500 ml-2">
+                {data.connectionCount} conexiones
+              </span>
+            </div>
           </div>
         </div>
         
@@ -234,150 +253,19 @@ const ReactFlowWrapper = ({
       )}
       
       {/* Enhanced Panel */}
-      <Panel position="top-right" className="bg-slate-800/30 border border-slate-700/30 rounded-lg p-2 backdrop-blur-sm">
-        <div className="flex items-center space-x-4 text-xs text-slate-400">
-          <span>Nodos: {nodes.length}</span>
-          <span>Conexiones: {edges.length}</span>
+      <Panel position="top-left" className="bg-slate-800/90 border border-slate-700/50 rounded-xl p-3 backdrop-blur-sm">
+        <div className="flex items-center space-x-4 text-sm text-white">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+            <span>Nodos: {nodes.length}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
+            <span>Conexiones: {edges.length}</span>
+          </div>
         </div>
       </Panel>
     </ReactFlow>
-  );
-};
-
-// User Details Modal Component
-const UserDetailsModal = ({ user, isOpen, onClose }) => {
-  if (!isOpen || !user) return null;
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-  };
-
-  return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={handleBackdropClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="user-details-title"
-    >
-      <div className="relative w-full max-w-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border border-slate-700/50 rounded-2xl shadow-2xl backdrop-blur-sm overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
-          <div className="flex items-center space-x-4">
-            <div className={`
-              w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl
-              ${user.avatar_url ? 'bg-cover bg-center' : 'bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600'}
-              shadow-lg border-2 border-slate-600/50
-            `}
-            style={user.avatar_url ? { backgroundImage: `url(${user.avatar_url})` } : {}}
-            >
-              {!user.avatar_url && (user.name?.charAt(0) || 'U').toUpperCase()}
-            </div>
-            <div>
-              <h2 id="user-details-title" className="text-xl font-bold text-white">{user.name}</h2>
-              {user.nickname && (
-                <p className="text-slate-400">@{user.nickname}</p>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
-            aria-label="Cerrar modal"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* User Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {user.city && (
-              <div className="flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
-                <MapPinIcon className="h-5 w-5 text-red-400 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-slate-400">Ciudad</p>
-                  <p className="text-white font-medium">{user.city}</p>
-                </div>
-              </div>
-            )}
-            
-            {user.nexus_person && (
-              <div className="flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
-                <UserIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-slate-400">Persona Nexo</p>
-                  <p className="text-white font-medium">{user.nexus_person}</p>
-                </div>
-              </div>
-            )}
-            
-            <div className="flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
-              <HeartIcon className="h-5 w-5 text-green-400 flex-shrink-0" />
-              <div>
-                <p className="text-sm text-slate-400">Conexiones</p>
-                <p className="text-white font-medium">{user.connectionCount || 0}</p>
-                <p className="text-xs text-slate-500">Usuarios introducidos</p>
-              </div>
-            </div>
-            
-            {user.level !== undefined && (
-              <div className="flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
-                <StarIcon className="h-5 w-5 text-yellow-400 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-slate-400">Nivel en el Árbol</p>
-                  <p className="text-white font-medium">Nivel {user.level}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-
-
-          {/* Information Note */}
-          <div className="p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
-            <p className="text-blue-300 text-sm">
-              💡 <strong>Nota:</strong> Para editar la "Persona Nexo", ve al perfil del usuario y modifica el campo correspondiente. 
-              Este esquema es solo visual y muestra las relaciones existentes.
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end p-6 border-t border-slate-700/50">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium rounded-lg transition-colors border border-slate-600/50 hover:border-slate-500/50"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
   );
 };
 
@@ -386,11 +274,10 @@ const ConnectionsTree = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [showBackground, setShowBackground] = useState(true);
-      // Only grid layout available
+      const [layoutType, setLayoutType] = useState('radial'); // 'radial', 'grid'
 
   // Detect mobile device
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -408,17 +295,188 @@ const ConnectionsTree = () => {
     initUsers();
   }, [user, authLoading, forceAuthCheck]);
 
-    // Grid layout function
-  const createLayout = useCallback((users) => {
+  // Enhanced layout function
+  const createLayout = useCallback((users, layoutType) => {
     if (!users.length) return { nodes: [], edges: [] };
 
     const nodes = [];
     const edges = [];
 
-    // Grid layout for better distribution
-      const nodeWidth = 300;
-      const nodeHeight = 140;
-      const padding = 80;
+    if (layoutType === 'radial') {
+      // Radial tree layout - much better for visualizing connections
+      const centerX = 800; // Center of the canvas
+      const centerY = 400; // Center of the canvas
+      const baseRadius = 120; // Distance between levels
+      const angleStep = 0.8; // Radians between nodes in same level
+      
+      // Group users by level (based on nexus_person)
+      const levels = new Map();
+      const processed = new Set();
+      
+      // Find root users (no nexus_person) - Level 0
+      const rootUsers = users.filter(u => !u.nexus_person);
+      levels.set(0, rootUsers);
+      rootUsers.forEach(u => processed.add(u.id));
+      
+      // Build levels dynamically
+      let currentLevel = 1;
+      while (processed.size < users.length && currentLevel < 10) {
+        const currentLevelUsers = users.filter(u => 
+          !processed.has(u.id) && 
+          u.nexus_person && 
+          processed.has(users.find(p => p.name === u.nexus_person)?.id)
+        );
+        
+        if (currentLevelUsers.length > 0) {
+          levels.set(currentLevel, currentLevelUsers);
+          currentLevelUsers.forEach(u => processed.add(u.id));
+        }
+        currentLevel++;
+      }
+      
+      // Position nodes in radial layout
+      levels.forEach((levelUsers, level) => {
+        const radius = level * baseRadius;
+        
+        if (level === 0) {
+          // Root level: place in center or small circle
+          if (levelUsers.length === 1) {
+            // Single root user in center
+            nodes.push({
+              id: levelUsers[0].id,
+              type: 'userNode',
+              position: { x: centerX, y: centerY },
+              data: {
+                ...levelUsers[0],
+                connectionCount: users.filter(u => u.nexus_person === levelUsers[0].name).length,
+                level: level
+              }
+            });
+          } else {
+            // Multiple root users in small circle
+            levelUsers.forEach((user, index) => {
+              const angle = (index / levelUsers.length) * 2 * Math.PI;
+              const x = centerX + Math.cos(angle) * 50;
+              const y = centerY + Math.sin(angle) * 50;
+              
+              nodes.push({
+                id: user.id,
+                type: 'userNode',
+                position: { x, y },
+                data: {
+                  ...user,
+                  connectionCount: users.filter(u => u.nexus_person === user.name).length,
+                  level: level
+                }
+              });
+            });
+          }
+        } else {
+          // Child levels: position based on parent connections
+          const parentGroups = new Map();
+          
+          // Group children by their parent
+          levelUsers.forEach((user) => {
+            const parentUser = users.find(u => u.name === user.nexus_person);
+            if (parentUser) {
+              const parentId = parentUser.id;
+              if (!parentGroups.has(parentId)) {
+                parentGroups.set(parentId, []);
+              }
+              parentGroups.get(parentId).push(user);
+            }
+          });
+          
+          // Position children around their parents
+          parentGroups.forEach((children, parentId) => {
+            const parentNode = nodes.find(n => n.id === parentId);
+            if (parentNode) {
+              const parentAngle = Math.atan2(parentNode.position.y - centerY, parentNode.position.x - centerX);
+              
+              children.forEach((child, childIndex) => {
+                // Calculate angle for this child
+                const totalChildren = children.length;
+                const angleOffset = (childIndex - (totalChildren - 1) / 2) * angleStep;
+                const childAngle = parentAngle + angleOffset;
+                
+                // Position child at the current level radius
+                const x = centerX + Math.cos(childAngle) * radius;
+                const y = centerY + Math.sin(childAngle) * radius;
+                
+                nodes.push({
+                  id: child.id,
+                  type: 'userNode',
+                  position: { x, y },
+                  data: {
+                    ...child,
+                    connectionCount: users.filter(u => u.nexus_person === child.name).length,
+                    level: level
+                  }
+                });
+              });
+            }
+          });
+        }
+      });
+      
+            // Create edges for radial layout with curved connections
+      const connectionPairs = [];
+      users.forEach(user => {
+        if (user.nexus_person) {
+          const sourceUser = users.find(u => u.name === user.nexus_person);
+          if (sourceUser) {
+            connectionPairs.push({ source: sourceUser, target: user });
+          }
+        }
+      });
+      
+      // Create edges with smooth curves for radial layout
+      let connectionIndex = 0;
+      connectionPairs.forEach((pair) => {
+        const sourceNode = nodes.find(n => n.id === pair.source.id);
+        const targetNode = nodes.find(n => n.id === pair.target.id);
+        
+        if (sourceNode && targetNode) {
+          // Use smoothstep for better curved connections in radial view
+          const lineType = 'smoothstep';
+            
+          // Generate unique color based on connection
+          const colors = [
+            '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', 
+            '#f97316', '#06b6d4', '#84cc16', '#a855f7', '#ef4444',
+            '#14b8a6', '#f43f5e', '#6366f1', '#06b6d4', '#84cc16'
+          ];
+          const uniqueColor = colors[connectionIndex % colors.length];
+          
+          edges.push({
+            id: `${pair.source.id}-${pair.target.id}`,
+            source: pair.source.id,
+            target: pair.target.id,
+            type: lineType,
+            animated: true,
+            style: {
+              stroke: uniqueColor,
+              strokeWidth: 2.5,
+              strokeDasharray: '10,5'
+            },
+            markerEnd: {
+              type: 'arrowclosed',
+              color: uniqueColor,
+              width: 12,
+              height: 12,
+              strokeWidth: 1.5
+            }
+          });
+          
+          connectionIndex++;
+        }
+      });
+    }
+    } else if (layoutType === 'grid') {
+      // Grid layout for better distribution
+      const nodeWidth = 280;
+      const nodeHeight = 120;
+      const padding = 50;
       const cols = Math.ceil(Math.sqrt(users.length));
       const rows = Math.ceil(users.length / cols);
       
@@ -521,19 +579,18 @@ const ConnectionsTree = () => {
           }
         });
       });
+    }
 
     return {
       nodes, 
       edges 
     };
-  }, []);
+  }, [layoutType]);
 
-  // Build nodes and edges with grid layout
-  const layoutResult = useMemo(() => {
-    return createLayout(users);
+  // Build nodes and edges with enhanced layout
+  const { nodes, edges } = useMemo(() => {
+    return createLayout(users, layoutType);
   }, [users, createLayout]);
-
-  const { nodes, edges } = layoutResult;
 
   // Filter nodes based on search
   const filteredNodes = useMemo(() => {
@@ -566,7 +623,6 @@ const ConnectionsTree = () => {
   const handleNodeClick = useCallback((event, node) => {
     if (node.type === 'userNode') {
       setSelectedUser(node.data);
-      setIsModalOpen(true);
     }
   }, []);
 
@@ -699,6 +755,12 @@ const ConnectionsTree = () => {
           <p className="text-slate-400 text-sm sm:text-base">
             Visualización de las relaciones basadas en "Persona Nexo"
           </p>
+          <div className="mt-2 p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              💡 <strong>Nota:</strong> Este es un esquema visual que muestra las relaciones existentes. 
+              Las conexiones se basan en el campo "Persona Nexo" de cada usuario y no se pueden editar directamente aquí.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -751,7 +813,46 @@ const ConnectionsTree = () => {
         </div>
       </div>
 
-
+      {/* Enhanced Controls */}
+      {showControls && (
+        <div className="flex flex-wrap gap-2 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-slate-300">Layout:</span>
+            <select
+              value={layoutType}
+              onChange={(e) => setLayoutType(e.target.value)}
+              className="px-3 py-1 bg-slate-700/50 border border-slate-600/50 rounded text-white text-sm"
+            >
+                              <option value="radial">Radial (Por Defecto)</option>
+              <option value="grid">Cuadrícula</option>
+            </select>
+          </div>
+        
+        <button
+            onClick={centerOnCurrentUser}
+            className="px-3 py-1 bg-yellow-600/50 hover:bg-yellow-600/70 text-white text-sm font-medium rounded-lg transition-colors border border-yellow-500/50 hover:border-yellow-400/50 flex items-center space-x-2"
+          >
+            <UserIcon className="h-4 w-4" />
+            <span>Mi Posición</span>
+        </button>
+        
+          <button
+            onClick={() => setShowMiniMap(!showMiniMap)}
+            className="px-3 py-1 bg-green-600/50 hover:bg-green-600/70 text-white text-sm font-medium rounded-lg transition-colors border border-green-500/50 hover:border-green-400/50 flex items-center space-x-2"
+          >
+            <ViewColumnsIcon className="h-4 w-4" />
+            <span>{showMiniMap ? 'Ocultar' : 'Mostrar'} Mapa</span>
+          </button>
+          
+          <button
+            onClick={() => setShowBackground(!showBackground)}
+            className="px-3 py-1 bg-blue-600/50 hover:bg-blue-600/70 text-white text-sm font-medium rounded-lg transition-colors border border-blue-500/50 hover:border-blue-400/50 flex items-center space-x-2"
+          >
+            <SparklesIcon className="h-4 w-4" />
+            <span>{showBackground ? 'Ocultar' : 'Mostrar'} Fondo</span>
+          </button>
+        </div>
+      )}
 
       {/* Loading State */}
       {isLoading && (
@@ -792,7 +893,20 @@ const ConnectionsTree = () => {
                 </p>
               </div>
               
-
+              <div className="flex items-center space-x-2 text-sm text-slate-400">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span>Tu posición</span>
+            </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                  <span>Seleccionado</span>
+          </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
+                  <span>Conexiones</span>
+                  </div>
+                  </div>
                   </div>
                 </div>
           
@@ -813,15 +927,50 @@ const ConnectionsTree = () => {
             </div>
           )}
           
-      {/* Selected User Details Modal */}
-      <UserDetailsModal
-        user={selectedUser}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedUser(null);
-        }}
-      />
+      {/* Selected User Details */}
+      {selectedUser && (
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-white mb-3">
+            👤 Detalles del Usuario Seleccionado
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-slate-400">Nombre</p>
+              <p className="text-white font-medium">{selectedUser.name}</p>
+            </div>
+            {selectedUser.nickname && (
+              <div>
+                <p className="text-sm text-slate-400">Nickname</p>
+                <p className="text-white font-medium">@{selectedUser.nickname}</p>
+                </div>
+            )}
+            {selectedUser.city && (
+              <div>
+                <p className="text-sm text-slate-400">Ciudad</p>
+                <p className="text-white font-medium">{selectedUser.city}</p>
+                  </div>
+                )}
+            {selectedUser.nexus_person && (
+              <div>
+                <p className="text-sm text-slate-400">Persona Nexo</p>
+                <p className="text-white font-medium">{selectedUser.nexus_person}</p>
+                <p className="text-xs text-slate-500 mt-1">Quien introdujo a este usuario</p>
+              </div>
+            )}
+            <div>
+              <p className="text-sm text-slate-400">Conexiones</p>
+              <p className="text-white font-medium">{selectedUser.connectionCount || 0}</p>
+              <p className="text-xs text-slate-500 mt-1">Usuarios que este usuario ha introducido</p>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-3 bg-slate-700/30 border border-slate-600/50 rounded-lg">
+            <p className="text-slate-300 text-sm">
+              💡 Para editar la "Persona Nexo", ve al perfil del usuario y modifica el campo correspondiente.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Enhanced Stats */}
       {!isLoading && filteredNodes.length > 0 && (
@@ -859,7 +1008,23 @@ const ConnectionsTree = () => {
             </div>
           </div>
           
-
+          <div className="mt-6 p-4 bg-slate-800/50 border border-slate-700/50 rounded-lg">
+            <h4 className="text-md font-semibold text-white mb-2">ℹ️ Información del Esquema</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-300">
+              <div>
+                <p><strong>• Nodos Azules:</strong> Usuarios de la comunidad</p>
+                <p><strong>• Nodos Púrpura-Rosa:</strong> Puntos de conexión visual</p>
+                <p><strong>• Líneas Animadas:</strong> Relaciones basadas en "Persona Nexo"</p>
+                <p><strong>• Layout Radial:</strong> Vista circular optimizada para conexiones</p>
+              </div>
+              <div>
+                <p><strong>• Punto Verde:</strong> Tu posición actual</p>
+                <p><strong>• Badge Púrpura:</strong> Número de usuarios introducidos</p>
+                <p><strong>• Solo Visual:</strong> Las conexiones no se pueden editar aquí</p>
+                <p><strong>• Zoom:</strong> Usa rueda del ratón para ajustar vista</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

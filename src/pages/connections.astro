@@ -3,7 +3,6 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import ProtectedRoute from '../components/ProtectedRoute.jsx';
-import PageHeader from '../components/PageHeader.jsx';
 import ConnectionsTree from '../components/ConnectionsTree.jsx';
 ---
 
@@ -11,19 +10,8 @@ import ConnectionsTree from '../components/ConnectionsTree.jsx';
   <Header client:only="react" />
   
   <ProtectedRoute client:load>
-    <main class="min-h-screen">
-      <PageHeader 
-        client:load
-        title="Árbol de Conexiones"
-        subtitle="Visualiza cómo estás conectado con el resto de la comunidad"
-        icon="map"
-        gradient="green"
-        breadcrumbs={[
-          { label: 'Conexiones', href: '/connections' }
-        ]}
-      />
-      
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 content-area">
+    <main class="min-h-screen pt-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 content-area">
         <ConnectionsTree client:only="react" />
       </div>
     </main>

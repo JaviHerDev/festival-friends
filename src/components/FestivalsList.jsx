@@ -18,6 +18,17 @@ const FestivalsList = ({ onEdit, onViewDetails }) => {
   const [sortBy, setSortBy] = useState('created_at_desc'); // Orden por defecto
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // 12 festivales por página
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const initFestivals = async () => {
@@ -204,9 +215,9 @@ const FestivalsList = ({ onEdit, onViewDetails }) => {
     <div className="space-y-6">
       {/* Search and filter bar */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col gap-4">
           {/* Search bar */}
-          <div className="relative flex-1">
+          <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
@@ -217,39 +228,42 @@ const FestivalsList = ({ onEdit, onViewDetails }) => {
             />
           </div>
 
-          {/* Sort dropdown */}
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value)}
-              className="input pr-10 appearance-none cursor-pointer"
-            >
-              {sortOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ArrowsUpDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
-          </div>
+          {/* Controls row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Sort dropdown */}
+            <div className="relative flex-1">
+              <select
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="input pr-10 appearance-none cursor-pointer"
+              >
+                {sortOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ArrowsUpDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
+            </div>
 
-          {/* Filter toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all ${
-              showFilters 
-                ? 'bg-primary-600 text-white' 
-                : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50'
-            }`}
-          >
-            <FunnelIcon className="h-5 w-5" />
-            <span>Filtros</span>
-            {activeFiltersCount > 0 && (
-              <span className="bg-primary-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
+            {/* Filter toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all ${
+                showFilters 
+                  ? 'bg-primary-600 text-white' 
+                  : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50'
+              }`}
+            >
+              <FunnelIcon className="h-5 w-5" />
+              <span className="hidden sm:inline">Filtros</span>
+              {activeFiltersCount > 0 && (
+                <span className="bg-primary-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Filters panel */}
@@ -376,7 +390,7 @@ const FestivalsList = ({ onEdit, onViewDetails }) => {
       {/* Festivals grid */}
       {!isLoading && sortedFestivals.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {paginatedFestivals.map(festival => (
               <FestivalCard 
                 key={festival.id} 
@@ -389,8 +403,8 @@ const FestivalsList = ({ onEdit, onViewDetails }) => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-8">
-              <div className="text-sm text-slate-400">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+              <div className="text-sm text-slate-400 text-center sm:text-left">
                 Mostrando {startIndex + 1}-{Math.min(endIndex, sortedFestivals.length)} de {sortedFestivals.length} festivales
               </div>
               

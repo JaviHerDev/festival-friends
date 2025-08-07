@@ -9,7 +9,8 @@ import {
   Home,
   Calendar,
   Users,
-  MapPin
+  MapPin,
+  Search
 } from 'lucide-react';
 import useStore from '../store/useStore.js';
 import { toast } from '../store/toastStore.js';
@@ -26,17 +27,28 @@ const Header = () => {
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get current path for active menu highlighting
   const [currentPath, setCurrentPath] = useState('/');
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
     setIsHydrated(true);
     if (typeof window !== 'undefined') {
       setCurrentPath(window.location.pathname);
+      
+      // Detect mobile
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
     }
   }, []);
 
@@ -46,13 +58,27 @@ const Header = () => {
       if (isUserMenuOpen && !event.target.closest('.user-menu')) {
         setIsUserMenuOpen(false);
       }
+      if (isSearchOpen && !event.target.closest('.search-container')) {
+        setIsSearchOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isUserMenuOpen]);
+  }, [isUserMenuOpen, isSearchOpen]);
+
+  // Handle search functionality
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      // Navigate to festivals page with search
+      window.location.href = `/festivals?search=${encodeURIComponent(searchTerm.trim())}`;
+      setIsSearchOpen(false);
+      setSearchTerm('');
+    }
+  };
 
   useEffect(() => {
     const initialize = async () => {
@@ -105,20 +131,18 @@ const Header = () => {
     };
   }, []);
 
-  // Removed forced nexus person modal - users can set it from their profile
-
   const handleSignOut = async () => {
     await signOut();
     logout();
     setIsUserMenuOpen(false);
-    setIsMobileMenuOpen(false); // Cerrar menú móvil también
+    setIsMobileMenuOpen(false);
     toast.info('Sesión cerrada', 'Has cerrado sesión correctamente. ¡Hasta la próxima! 🤘');
   };
 
   const handleOpenProfile = () => {
     setProfileModalOpen(true);
     setIsUserMenuOpen(false);
-    setIsMobileMenuOpen(false); // Cerrar menú móvil también
+    setIsMobileMenuOpen(false);
   };
 
   // Cerrar menú móvil al hacer click en enlaces
@@ -142,8 +166,6 @@ const Header = () => {
     }
     return currentPath.startsWith(href);
   };
-
-
 
   // Skeleton loader while initializing
   if (!isInitialized) {
@@ -179,16 +201,21 @@ const Header = () => {
             <div className="flex-shrink-0">
               <a href="/" className="flex items-center space-x-2 select-none">
                 <span className="text-2xl sm:text-3xl">🎸</span>
-                <span className="flex items-center">
-                  <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Festival</span>
-                  <span className="text-white text-xl sm:text-2xl lg:text-3xl font-bold leading-none mx-1">&</span>
-                  <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Friends</span>
-                </span>
+                {!isMobile && (
+                  <span className="flex items-center">
+                    <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Festival</span>
+                    <span className="text-white text-xl sm:text-2xl lg:text-3xl font-bold leading-none mx-1">&</span>
+                    <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Friends</span>
+                  </span>
+                )}
+                {isMobile && (
+                  <span className="gradient-text text-lg font-bold">F&F</span>
+                )}
               </a>
             </div>
 
             {/* Navigation - Desktop */}
-            {user && (
+            {user && !isMobile && (
               <nav className="hidden md:flex space-x-1">
                 {navigationItems.map((item) => {
                   const active = isActive(item.href);
@@ -233,10 +260,20 @@ const Header = () => {
               </nav>
             )}
 
-                        {/* Right side */}
+            {/* Right side */}
             <div className="flex items-center space-x-2 sm:space-x-4">
               {user ? (
                 <>
+                  {/* Search button - Mobile */}
+                  {isMobile && (
+                    <button
+                      onClick={() => setIsSearchOpen(!isSearchOpen)}
+                      className="p-2 text-slate-400 hover:text-white transition-colors"
+                    >
+                      <Search className="h-5 w-5" />
+                    </button>
+                  )}
+
                   {/* Notifications */}
                   <button
                     onClick={() => setIsNotificationPanelOpen(true)}
@@ -317,11 +354,11 @@ const Header = () => {
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     className="sm:hidden p-2 text-slate-400 hover:text-white transition-colors"
                   >
-                                {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
+                    {isMobileMenuOpen ? (
+                      <X className="h-6 w-6" />
+                    ) : (
+                      <Menu className="h-6 w-6" />
+                    )}
                   </button>
                 </>
               ) : (
@@ -335,6 +372,31 @@ const Header = () => {
               )}
             </div>
           </div>
+
+          {/* Mobile Search Bar */}
+          {isMobile && isSearchOpen && (
+            <div className="search-container pb-4">
+              <form onSubmit={handleSearch} className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar festivales, amigos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-slate-800/50 border border-slate-600/50 text-white placeholder-slate-400 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                  autoFocus
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary-600 text-white p-1 rounded-md hover:bg-primary-500 transition-colors"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* Mobile Navigation Overlay */}

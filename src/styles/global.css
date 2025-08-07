@@ -7,6 +7,8 @@
     scroll-behavior: smooth;
     /* Prevent horizontal scroll on mobile */
     overflow-x: hidden;
+    /* Improve mobile performance */
+    -webkit-overflow-scrolling: touch;
   }
   
   body {
@@ -16,6 +18,10 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Improve mobile performance */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent zoom on double tap */
+    touch-action: manipulation;
   }
   
   * {
@@ -24,8 +30,14 @@
   
   /* Improve touch targets on mobile */
   @media (max-width: 640px) {
-    button, a {
+    button, a, input, select, textarea {
       min-height: 44px; /* Apple's recommended minimum touch target */
+      min-width: 44px;
+    }
+    
+    /* Improve tap highlight */
+    * {
+      -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
     }
   }
 }
@@ -75,6 +87,8 @@
     /* Add shimmer effect */
     background-size: 200% 100%;
     animation: shimmer 3s ease-in-out infinite;
+    /* Improve touch feedback */
+    @apply touch-manipulation;
   }
   
   .btn-primary::before {
@@ -96,6 +110,8 @@
     @apply relative bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/70 hover:to-slate-500/70 text-slate-200 font-semibold px-4 py-2 rounded-lg transition-all duration-300 border border-slate-500/40 hover:border-slate-400/50 overflow-hidden backdrop-blur-sm;
     /* Improve mobile tap feedback */
     @apply active:scale-95;
+    /* Improve touch feedback */
+    @apply touch-manipulation;
   }
   
   .btn-secondary::before {
@@ -120,6 +136,8 @@
     /* Add shimmer effect */
     background-size: 200% 100%;
     animation: shimmer 3s ease-in-out infinite;
+    /* Improve touch feedback */
+    @apply touch-manipulation;
   }
   
   .btn-small::before {
@@ -141,12 +159,16 @@
     @apply glass rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-700/50;
     /* Improve mobile interaction */
     @apply active:scale-95;
+    /* Improve touch feedback */
+    @apply touch-manipulation;
   }
   
   .input {
     @apply w-full bg-slate-800/50 border border-slate-600/50 text-white placeholder-slate-400 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
     /* Improve mobile input experience */
     @apply text-base; /* Prevents zoom on iOS */
+    /* Improve touch feedback */
+    @apply touch-manipulation;
   }
   
   /* Line clamp utilities */
@@ -174,7 +196,7 @@
     line-clamp: 3;
   }
   
-  /* Mobile-specific improvements */
+  /* Mobile-specific improvements - NO ANIMATIONS */
   @media (max-width: 640px) {
     .card {
       @apply p-4; /* Smaller padding on mobile */
@@ -184,6 +206,56 @@
       /* Less blur on mobile for better performance */
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
+    }
+    
+    /* Improve mobile grid layouts */
+    .grid {
+      gap: 1rem; /* Consistent gap on mobile */
+    }
+    
+    /* Better mobile spacing */
+    .space-y-6 > * + * {
+      margin-top: 1.5rem;
+    }
+    
+    .space-y-4 > * + * {
+      margin-top: 1rem;
+    }
+    
+    /* Mobile-optimized buttons */
+    .btn-primary,
+    .btn-secondary {
+      @apply py-3 px-4; /* Larger touch targets */
+      font-size: 1rem;
+    }
+    
+    /* Mobile-optimized inputs */
+    .input {
+      @apply py-3 px-4;
+      font-size: 1rem;
+    }
+    
+    /* Mobile-optimized modals */
+    .modal-overlay {
+      padding: 1rem;
+    }
+    
+    /* Mobile-optimized dropdowns */
+    .dropdown-menu {
+      max-width: calc(100vw - 2rem);
+      margin: 0 1rem;
+    }
+  }
+  
+  /* Tablet optimizations */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .card {
+      @apply p-5; /* Medium padding on tablet */
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+      @apply py-2.5 px-4;
     }
   }
 }
@@ -212,6 +284,16 @@
     width: 4px;
     height: 4px;
   }
+  
+  /* Hide scrollbar on mobile for cleaner look */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Prevent zoom on iOS when focusing inputs */
@@ -234,7 +316,7 @@ textarea:focus-visible {
   @apply ring-2 ring-primary-500 ring-offset-2 ring-offset-slate-900;
 }
 
-/* Custom animations for menu active states */
+/* Custom animations for menu active states - DISABLED ON MOBILE */
 @keyframes menu-glow {
   0%, 100% {
     opacity: 0.3;
@@ -278,7 +360,7 @@ textarea:focus-visible {
   animation: menu-slide 0.3s ease-out;
 }
 
-/* Shimmer animation for buttons */
+/* Shimmer animation for buttons - DISABLED ON MOBILE */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -288,7 +370,7 @@ textarea:focus-visible {
   }
 }
 
-/* Button glow effect */
+/* Button glow effect - DISABLED ON MOBILE */
 @keyframes button-glow {
   0%, 100% {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
@@ -298,7 +380,7 @@ textarea:focus-visible {
   }
 }
 
-/* Enhanced button states */
+/* Enhanced button states - DISABLED ON MOBILE */
 .btn-primary:hover {
   animation: button-glow 2s ease-in-out infinite;
 }
@@ -350,4 +432,127 @@ textarea:focus-visible {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
+}
+
+/* Mobile-specific modal improvements */
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 1rem !important;
+  }
+  
+  .modal-overlay > div {
+    border-radius: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+/* Mobile navigation improvements - NO ANIMATIONS */
+@media (max-width: 640px) {
+  /* Mobile menu - no animations */
+  .mobile-menu {
+    /* Remove animation */
+  }
+  
+  /* Better mobile search experience - no animations */
+  .search-container {
+    /* Remove animation */
+  }
+}
+
+/* Mobile card hover effects - DISABLED */
+@media (max-width: 640px) {
+  .card:hover,
+  .user-card:hover {
+    transform: none; /* Disable hover effects on mobile */
+  }
+  
+  /* Remove active state animations on mobile */
+  .card:active,
+  .user-card:active {
+    transform: none;
+  }
+  
+  /* Disable all animations on mobile */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* Disable button animations on mobile */
+  .btn-primary,
+  .btn-secondary,
+  .btn-small {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .btn-primary::before,
+  .btn-secondary::before,
+  .btn-small::before {
+    display: none !important;
+  }
+  
+  /* Disable shimmer effects on mobile */
+  .btn-primary,
+  .btn-small {
+    background-size: auto !important;
+  }
+  
+  /* Disable menu animations on mobile */
+  .menu-active-glow,
+  .menu-active-pulse,
+  .menu-active-slide {
+    animation: none !important;
+  }
+  
+  /* Disable button glow on mobile */
+  .btn-primary:hover {
+    animation: none !important;
+  }
+  
+  /* Disable card hover effects on mobile */
+  .card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Disable scale effects on mobile */
+  .btn-primary:active,
+  .btn-secondary:active,
+  .btn-small:active,
+  .card:active {
+    transform: none !important;
+  }
+  
+  /* Optimize backdrop filters */
+  .glass,
+  .glass-dark,
+  .dropdown-menu,
+  .mobile-menu {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Mobile accessibility improvements */
+@media (max-width: 640px) {
+  /* Larger touch targets for better accessibility */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Better focus indicators */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply ring-2 ring-primary-500 ring-offset-1;
+  }
 } 

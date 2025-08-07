@@ -137,17 +137,25 @@ const UserProfileModal = ({ user, isOpen, onClose }) => {
       aria-labelledby="user-profile-title"
     >
       <div 
-        className="bg-slate-900/95 backdrop-blur-lg border border-slate-600/70 sm:max-w-lg w-full max-h-[90vh] flex flex-col rounded-xl shadow-2xl modal-content" 
+        className="bg-slate-900/95 backdrop-blur-lg border border-slate-600/70 sm:max-w-2xl w-full max-h-[90vh] flex flex-col rounded-2xl shadow-2xl modal-content" 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
-          <h2 id="user-profile-title" className="text-xl font-bold text-white">
-            Perfil de {user.name}
-          </h2>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center">
+              <User className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 id="user-profile-title" className="text-xl font-bold text-white">
+                Perfil de {user.name}
+              </h2>
+              <p className="text-sm text-slate-400">Detalles completos del usuario</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800/50"
+            className="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-800/50 hover:scale-110"
             aria-label="Cerrar modal"
           >
             <X className="h-5 w-5" />
@@ -156,7 +164,7 @@ const UserProfileModal = ({ user, isOpen, onClose }) => {
 
         {/* Content */}
         <div className="overflow-y-auto flex-1 min-h-0 p-6">
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* User Header Section */}
             <UserHeader user={user} formatDate={formatDate} />
             
@@ -193,10 +201,10 @@ const UserProfileModal = ({ user, isOpen, onClose }) => {
 
         {/* Footer */}
         <div className="p-6 border-t border-slate-700/50">
-          <div className="flex space-x-3">
+          <div className="flex space-x-4">
             <button 
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium rounded-lg transition-colors border border-slate-600/50 hover:border-slate-500/50"
+              className="flex-1 px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium rounded-xl transition-all duration-300 border border-slate-600/50 hover:border-slate-500/50 hover:scale-105"
             >
               Cerrar
             </button>
@@ -204,9 +212,10 @@ const UserProfileModal = ({ user, isOpen, onClose }) => {
               <button 
                 onClick={handleDeleteUser}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors border border-red-500/50 hover:border-red-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-all duration-300 border border-red-500/50 hover:border-red-400/50 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
               >
-                <Trash2 className="inline-block h-4 w-4" />
+                <Trash2 className="inline-block h-4 w-4 mr-2" />
+                Eliminar
               </button>
             )}
           </div>
@@ -265,12 +274,13 @@ const BadgesSection = ({ badges, isLoading }) => {
       const modalRect = modalContainer ? modalContainer.getBoundingClientRect() : null;
       
       if (modalRect) {
+        const spaceBelow = modalRect.bottom - rect.bottom;
         const spaceAbove = rect.top - modalRect.top;
         const spaceLeft = rect.left - modalRect.left;
         const spaceRight = modalRect.right - rect.right;
         
-        // Siempre posicionar arriba de la insignia
-        const verticalPosition = 'top';
+        // Determinar posición vertical
+        const verticalPosition = spaceBelow > 120 ? 'bottom' : 'top';
         
         // Determinar posición horizontal
         let horizontalPosition = 'center';
@@ -279,7 +289,7 @@ const BadgesSection = ({ badges, isLoading }) => {
         
         setTooltipPosition({ vertical: verticalPosition, horizontal: horizontalPosition });
       } else {
-        setTooltipPosition({ vertical: 'top', horizontal: 'center' });
+        setTooltipPosition({ vertical: 'bottom', horizontal: 'center' });
       }
     }
   };
@@ -310,14 +320,14 @@ const BadgesSection = ({ badges, isLoading }) => {
 
   if (isLoading) {
     return (
-      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-        <h4 className="text-base font-semibold text-white mb-3 flex items-center">
-          <Trophy className="w-5 h-5 mr-2 text-primary-400" />
+      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+        <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+          <Trophy className="w-6 h-6 mr-3 text-primary-400" />
           Insignias
         </h4>
-        <div className="flex items-center justify-center py-4">
-          <div className="animate-spin h-6 w-6 border-2 border-primary-600 border-t-transparent rounded-full"></div>
-          <span className="ml-2 text-slate-400 text-sm">Cargando insignias...</span>
+        <div className="flex items-center justify-center py-6">
+          <div className="animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full"></div>
+          <span className="ml-3 text-slate-400 text-base">Cargando insignias...</span>
         </div>
       </div>
     );
@@ -325,62 +335,63 @@ const BadgesSection = ({ badges, isLoading }) => {
 
   if (badges.length === 0) {
     return (
-      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-        <h4 className="text-base font-semibold text-white mb-3 flex items-center">
-          <Trophy className="w-5 h-5 mr-2 text-primary-400" />
+      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+        <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+          <Trophy className="w-6 h-6 mr-3 text-primary-400" />
           Insignias
         </h4>
-        <div className="text-center py-4">
-          <Trophy className="h-8 w-8 text-slate-500 mx-auto mb-2" />
-          <p className="text-slate-400 text-sm">Aún no tiene insignias</p>
+        <div className="text-center py-6">
+          <Trophy className="h-12 w-12 text-slate-500 mx-auto mb-3" />
+          <p className="text-slate-400 text-base">Aún no tiene insignias</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-      <h4 className="text-base font-semibold text-white mb-3 flex items-center">
-        <Trophy className="w-5 h-5 mr-2 text-primary-400" />
+    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+        <Trophy className="w-6 h-6 mr-3 text-primary-400" />
         Insignias
-        <span className="ml-2 text-xs text-primary-300">({badges.length})</span>
+        <span className="ml-2 text-sm text-primary-300 bg-primary-500/20 px-2 py-1 rounded-full">({badges.length})</span>
       </h4>
-      <div className="flex flex-row gap-2">
-        {badges.slice(0, 3).map((badge) => {
-          const rarity = badge.badge_definitions?.rarity;
-          const dotColor =
-            rarity === 'legendary' ? 'bg-yellow-400' :
-            rarity === 'epic' ? 'bg-purple-400' :
-            rarity === 'rare' ? 'bg-blue-400' :
-            'bg-gray-400';
-          return (
-            <button
-              key={badge.id}
-              tabIndex={0}
-              aria-label={`${badge.badge_definitions?.name}: ${badge.badge_definitions?.description}`}
-              className="relative group/badge p-2 rounded-lg border bg-slate-700/60 hover:scale-110 focus:scale-110 transition-transform outline-none border-slate-600/50 min-w-[40px] min-h-[40px] flex items-center justify-center"
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleBadgeClick(badge, e);
-                }
-              }}
-              onClick={(e) => handleBadgeClick(badge, e)}
-              type="button"
-            >
-              <span className="text-xl" aria-hidden="true">{badge.badge_definitions?.icon}</span>
-              <span className="sr-only">{badge.badge_definitions?.name}</span>
-              <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${dotColor}`}></span>
+      <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-600/30">
+        <div className="flex flex-row gap-4">
+          {badges.slice(0, 3).map((badge) => {
+            const rarity = badge.badge_definitions?.rarity;
+            const dotColor =
+              rarity === 'legendary' ? 'bg-yellow-400' :
+              rarity === 'epic' ? 'bg-purple-400' :
+              rarity === 'rare' ? 'bg-blue-400' :
+              'bg-gray-400';
+            return (
+              <button
+                key={badge.id}
+                tabIndex={0}
+                aria-label={`${badge.badge_definitions?.name}: ${badge.badge_definitions?.description}`}
+                className="relative group/badge p-3 rounded-xl border-2 bg-slate-700/60 hover:scale-110 focus:scale-110 transition-all duration-300 outline-none border-slate-600/50 min-w-[56px] min-h-[56px] flex items-center justify-center shadow-lg hover:shadow-xl hover:border-primary-400/50 backdrop-blur-sm"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleBadgeClick(badge, e);
+                  }
+                }}
+                onClick={(e) => handleBadgeClick(badge, e)}
+                type="button"
+              >
+                <span className="text-2xl" aria-hidden="true">{badge.badge_definitions?.icon}</span>
+                <span className="sr-only">{badge.badge_definitions?.name}</span>
+                <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${dotColor} border-2 border-slate-800 shadow-lg`}></span>
               
-              {/* Tooltip solo en desktop */}
-              {!isMobile && (
-                <div className={getTooltipClasses(tooltipPosition)}>
-                  <div className="font-bold mb-1">{badge.badge_definitions?.name}</div>
-                  <div>{badge.badge_definitions?.description}</div>
-                  <div className="mt-1 text-[10px] text-primary-400 capitalize">{badge.badge_definitions?.rarity}</div>
-                </div>
-              )}
-            </button>
+                {/* Tooltip solo en desktop */}
+                {!isMobile && (
+                  <div className={getTooltipClasses(tooltipPosition)}>
+                    <div className="font-bold mb-1">{badge.badge_definitions?.name}</div>
+                    <div>{badge.badge_definitions?.description}</div>
+                    <div className="mt-1 text-[10px] text-primary-400 capitalize">{badge.badge_definitions?.rarity}</div>
+                  </div>
+                )}
+              </button>
           );
         })}
         {badges.length > 3 && (
@@ -468,38 +479,42 @@ const BadgesSection = ({ badges, isLoading }) => {
 
 // User Header Component
 const UserHeader = ({ user, formatDate }) => (
-  <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
-    {/* Avatar */}
-    <div className="flex-shrink-0">
-      <UserAvatar 
-        user={user} 
-        size="2xl" 
-        className="shadow-lg"
-      />
-    </div>
-    
-    {/* User Info */}
-    <div className="flex-1 text-center sm:text-left">
-      <h3 className="text-xl font-bold text-white mb-2">
-        {user.name}
-      </h3>
+  <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+    <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+      {/* Avatar */}
+      <div className="flex-shrink-0 relative">
+        <UserAvatar 
+          user={user} 
+          size="3xl" 
+          className="shadow-2xl border-4 border-primary-500/30"
+        />
+        {/* Online status */}
+        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-slate-900 rounded-full"></div>
+      </div>
       
-      {user.nickname && (
-        <p className="text-primary-400 text-base font-medium mb-2">
-          @{user.nickname}
-        </p>
-      )}
+      {/* User Info */}
+      <div className="flex-1 text-center sm:text-left">
+        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+          {user.name}
+        </h3>
+        
+        {user.nickname && (
+          <p className="text-primary-400 text-lg font-medium mb-3">
+            @{user.nickname}
+          </p>
+        )}
 
-      {user.city && (
-        <div className="flex items-center justify-center sm:justify-start space-x-2 text-slate-300 mb-2">
-          <MapPin className="h-4 w-4" />
-          <span className="text-sm">{user.city}</span>
+        {user.city && (
+          <div className="flex items-center justify-center sm:justify-start space-x-2 text-slate-300 mb-3">
+            <MapPin className="h-5 w-5 text-primary-400" />
+            <span className="text-base">{user.city}</span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-center sm:justify-start space-x-2 text-slate-500 text-sm bg-slate-800/50 px-3 py-2 rounded-lg">
+          <Calendar className="h-4 w-4" />
+          <span>Miembro desde {formatDate(user.created_at)}</span>
         </div>
-      )}
-
-      <div className="flex items-center justify-center sm:justify-start space-x-2 text-slate-500 text-xs">
-        <Calendar className="h-3 w-3" />
-        <span>Miembro desde {formatDate(user.created_at)}</span>
       </div>
     </div>
   </div>
@@ -507,27 +522,32 @@ const UserHeader = ({ user, formatDate }) => (
 
 // Biography Section Component
 const BioSection = ({ bio }) => (
-  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-    <h4 className="text-base font-semibold text-white mb-3 flex items-center">
-      <span className="mr-2">🎸</span>
+  <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+      <span className="mr-3 text-2xl">🎸</span>
       Biografía
     </h4>
-    <p className="text-slate-300 leading-relaxed text-sm">
-      {bio}
-    </p>
+    <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-600/30">
+      <p className="text-slate-200 leading-relaxed text-base">
+        {bio}
+      </p>
+    </div>
   </div>
 );
 
 // Key Phrase Section Component
 const KeyPhraseSection = ({ keyPhrase }) => (
-  <div className="bg-primary-500/10 rounded-lg p-4 border border-primary-500/20">
-    <h4 className="text-base font-semibold text-primary-300 mb-3 flex items-center">
-      <span className="mr-2">💭</span>
+  <div className="bg-gradient-to-r from-primary-500/20 via-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-2xl p-6 border border-primary-500/30 shadow-xl">
+    <h4 className="text-lg font-semibold text-primary-300 mb-4 flex items-center">
+      <span className="mr-3 text-2xl">💭</span>
       La frase estelar
     </h4>
-    <p className="text-primary-200 italic text-base text-center">
-      "{keyPhrase}"
-    </p>
+    <div className="bg-primary-500/10 rounded-xl p-6 border border-primary-500/20 text-center">
+      <p className="text-primary-200 italic text-lg font-medium leading-relaxed">
+        "{keyPhrase}"
+      </p>
+      <p className="text-primary-400/70 text-sm mt-2">Frase clave del usuario</p>
+    </div>
   </div>
 );
 
@@ -538,19 +558,24 @@ const ContactSection = ({ user }) => {
   if (!hasContactInfo) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Phone Contact */}
       {user.phone && (
-        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-          <h4 className="text-base font-semibold text-white mb-3 flex items-center">
-            <span className="mr-2">📱</span>
+        <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <span className="mr-3 text-2xl">📱</span>
             Contacto
           </h4>
-          <div className="space-y-3">
+          <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-600/30 space-y-4">
             {/* Phone Number */}
-            <div className="flex items-center space-x-2 text-slate-300">
-              <Phone className="h-4 w-4" />
-              <span className="text-sm">{user.phone}</span>
+            <div className="flex items-center space-x-3 text-slate-200">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <Phone className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="font-medium text-sm">Teléfono</div>
+                <div className="text-base">{user.phone}</div>
+              </div>
             </div>
             
             {/* WhatsApp Link */}
@@ -558,17 +583,17 @@ const ContactSection = ({ user }) => {
               href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-3 p-3 bg-gradient-to-r from-green-500/10 to-green-600/10 hover:from-green-500/20 hover:to-green-600/20 text-slate-300 hover:text-green-400 transition-all duration-300 rounded-lg border border-green-500/20 hover:border-green-500/40 group"
+              className="flex items-center space-x-3 p-4 bg-gradient-to-r from-green-500/10 to-green-600/10 hover:from-green-500/20 hover:to-green-600/20 text-slate-200 hover:text-green-300 transition-all duration-300 rounded-xl border border-green-500/20 hover:border-green-500/40 group hover:scale-105"
               aria-label="Contactar por WhatsApp"
             >
-              <div className="w-5 h-5 group-hover:scale-110 transition-transform">
-                <svg viewBox="0 0 24 24" fill="currentColor">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
                 </svg>
               </div>
               <div>
-                <div className="font-medium text-sm">WhatsApp</div>
-                <div className="text-xs text-slate-400 group-hover:text-green-300">Enviar mensaje</div>
+                <div className="font-bold text-base">WhatsApp</div>
+                <div className="text-sm text-slate-400 group-hover:text-green-200">Enviar mensaje</div>
               </div>
             </a>
           </div>
@@ -577,12 +602,12 @@ const ContactSection = ({ user }) => {
 
       {/* Social Networks */}
       {(user.instagram || user.twitter) && (
-        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-          <h4 className="text-base font-semibold text-white mb-3 flex items-center">
-            <span className="mr-2">🌐</span>
+        <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <span className="mr-3 text-2xl">🌐</span>
             Redes Sociales
           </h4>
-          <div className="space-y-3">
+          <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-600/30 space-y-4">
             {user.instagram && (
               <SocialLink
                 url={`https://www.instagram.com/${user.instagram.replace(/^@/, '')}/`}
@@ -648,22 +673,24 @@ const SocialLink = ({ url, platform, description, icon, hoverColor }) => {
 
 // Connection Section Component
 const ConnectionSection = ({ nexusPerson }) => (
-  <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
-    <h4 className="text-base font-semibold text-purple-300 mb-3 flex items-center">
-      <span className="mr-2">🔗</span>
+  <div className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 shadow-xl">
+    <h4 className="text-lg font-semibold text-purple-300 mb-4 flex items-center">
+      <span className="mr-3 text-2xl">🔗</span>
       Persona Nexo
     </h4>
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
-        <User className="h-4 w-4 text-purple-300" />
-      </div>
-      <div>
-        <p className="text-purple-200 text-sm">
-          Conectado a través de:
-        </p>
-        <p className="text-purple-100 font-semibold text-base">
-          {nexusPerson}
-        </p>
+    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+      <div className="flex items-center space-x-4">
+        <div className="w-12 h-12 bg-gradient-to-br from-purple-500/30 to-indigo-500/30 rounded-full flex items-center justify-center border-2 border-purple-500/40 shadow-lg">
+          <User className="h-6 w-6 text-purple-200" />
+        </div>
+        <div>
+          <p className="text-purple-200 text-sm font-medium">
+            Conectado a través de:
+          </p>
+          <p className="text-purple-100 font-bold text-lg">
+            {nexusPerson}
+          </p>
+        </div>
       </div>
     </div>
   </div>

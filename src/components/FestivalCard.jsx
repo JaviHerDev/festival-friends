@@ -18,6 +18,17 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [hasSubmittedSurvey, setHasSubmittedSurvey] = useState(false);
   const [isCheckingSurvey, setIsCheckingSurvey] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Get user's current attendance status
   const userAttendance = festival.attendances?.find(a => a.user_id === user?.id);
@@ -265,8 +276,6 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
     }
   };
 
-
-
   const attendanceCounts = {
     have_ticket: festival.attendances?.filter(a => a.status === 'have_ticket').length || 0,
     thinking_about_it: festival.attendances?.filter(a => a.status === 'thinking_about_it').length || 0,
@@ -274,39 +283,39 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
   };
 
   return (
-    <div className="card hover:scale-105 transition-all duration-300">
+    <div className="bg-slate-800/80 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl p-4 sm:p-6 shadow-xl shadow-black/20 hover:shadow-2xl hover:shadow-primary-500/10 hover:border-primary-400/50 transition-all duration-300 no-animation-mobile no-hover-mobile no-scale-mobile">
       {/* Festival image/header */}
-      <div className="relative mb-4">
+      <div className="relative mb-6">
         {festival.poster_url ? (
-          <div className="relative">
+          <div className="relative group">
             <img
               src={festival.poster_url}
               alt={festival.name}
-              className="w-full h-48 object-cover object-top rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+              className="w-full h-52 sm:h-56 object-cover object-top rounded-xl border border-slate-600/30 shadow-lg"
               onClick={() => setIsLightboxOpen(true)}
             />
             
             {/* View poster button */}
             <button
               onClick={() => setIsLightboxOpen(true)}
-              className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 hover:bg-black/70 text-white rounded-full text-xs font-medium transition-colors flex items-center space-x-1"
+              className="absolute bottom-3 left-3 px-3 py-2 bg-black/60 hover:bg-black/80 text-white rounded-lg text-sm font-medium transition-all duration-300 flex items-center space-x-2 shadow-lg backdrop-blur-sm"
             >
-              <Image className="h-3 w-3" />
-              <span>Ver</span>
+              <Image className="h-4 w-4" />
+              <span>Ver cartel</span>
             </button>
           </div>
         ) : (
-          <div className="w-full h-48 bg-gradient-to-br from-primary-600/20 to-purple-600/20 rounded-lg flex items-center justify-center">
-            <div className="text-6xl">{getCategoryIcon(festival.category)}</div>
+          <div className="w-full h-52 sm:h-56 bg-gradient-to-br from-primary-600/20 to-purple-600/20 rounded-xl border border-slate-600/30 flex items-center justify-center shadow-lg">
+            <div className="text-7xl">{getCategoryIcon(festival.category)}</div>
           </div>
         )}
 
         {/* Options menu */}
-        <div className="absolute top-2 left-2">
+        <div className="absolute top-3 right-3">
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+              className="p-2.5 bg-black/60 hover:bg-black/80 rounded-lg transition-all duration-300 backdrop-blur-sm shadow-lg"
             >
               <MoreVertical className="h-4 w-4 text-white" />
             </button>
@@ -352,13 +361,13 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
       </div>
 
       {/* Festival info */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-white line-clamp-2 flex-1">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between">
+          <h3 className="text-xl sm:text-2xl font-bold text-white line-clamp-2 flex-1 pr-3">
             {festival.name}
           </h3>
           {festival.category && (
-            <span className="px-2 py-1 bg-primary-600/20 text-primary-400 rounded-full text-xs font-medium ml-2 flex-shrink-0">
+            <span className="px-3 py-2 bg-primary-600/20 text-primary-400 rounded-full text-sm font-medium flex-shrink-0 border border-primary-500/30 backdrop-blur-sm">
               {getCategoryIcon(festival.category)} {getCategoryName(festival.category)}
             </span>
           )}
@@ -366,175 +375,205 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
 
         {/* Description */}
         {festival.description && (
-          <p className="text-sm text-white/70 line-clamp-3 p-2 bg-slate-700/50 rounded-lg">
+          <p className="text-sm sm:text-base text-white/85 line-clamp-3 p-4 bg-slate-700/40 border border-slate-600/40 rounded-xl backdrop-blur-sm shadow-inner">
             {festival.description}
           </p>
         )}
 
-        <div className="space-y-2 text-sm text-white/80">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
-            <span>
-              {formatDate(festival.start_date)}
-              {festival.start_date !== festival.end_date && 
-                ` - ${formatDate(festival.end_date)}`
-              }
-            </span>
+        <div className="space-y-3 text-sm sm:text-base text-white/85">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Calendar className="h-5 w-5 text-primary-400 flex-shrink-0" />
+              <span className="font-medium">
+                {formatDate(festival.start_date)}
+                {festival.start_date !== festival.end_date && 
+                  ` - ${formatDate(festival.end_date)}`
+                }
+              </span>
+            </div>
             {isFestivalEnded() && (
-              <span className="px-2 py-1 bg-gray-600 text-white rounded-full text-xs font-medium flex items-center gap-1">
+              <span className="px-3 py-1.5 bg-green-600/20 border border-green-500/30 text-green-400 rounded-full text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm">
                 <span>✅</span>
                 <span>Finalizado</span>
               </span>
             )}
           </div>
           
-          <div className="flex items-center space-x-2">
-            <MapPin className="h-4 w-4" />
-            <span className="line-clamp-1">{festival.location}</span>
+          <div className="flex items-center space-x-3">
+            <MapPin className="h-5 w-5 text-primary-400 flex-shrink-0" />
+            <span className="line-clamp-1 font-medium">{festival.location}</span>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Users className="h-4 w-4" />
-            <span>
+          <div className="flex items-center space-x-3">
+            <Users className="h-5 w-5 text-primary-400 flex-shrink-0" />
+            <span className="font-medium">
               {attendanceCounts.have_ticket + attendanceCounts.thinking_about_it} interesados
             </span>
           </div>
-
-
         </div>
 
-        {/* Status badges - moved from image to content */}
-        <div className="flex flex-wrap gap-2">
-          {/* Survey status badge */}
-          {isFestivalEnded() && (() => {
-            const surveyStatus = getSurveyStatus();
-            return (
-              <div className={`px-2 py-1 rounded-full text-xs font-medium ${getSurveyStatusColor(surveyStatus.status)} text-white flex items-center gap-1`}>
-                <span>📊</span>
-                <span>{surveyStatus.text}</span>
-              </div>
-            );
-          })()}
-          
 
-        </div>
 
-        {/* Survey access button */}
+        {/* Survey Section */}
         {isFestivalEnded() && getSurveyStatus().status === 'available' && (
-          isCheckingSurvey ? (
-            <div className="w-full px-3 py-2 bg-slate-700/50 text-slate-400 rounded-lg text-sm font-medium flex items-center justify-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400"></div>
-              <span>Verificando participación...</span>
+          <div className="mt-6 p-4 bg-slate-800/50 border border-slate-600/50 rounded-xl backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-white/90 flex items-center">
+                <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                Encuesta del Festival
+              </h4>
+              <div className="px-2 py-1 bg-green-600/20 border border-green-500/30 text-green-400 rounded-full text-xs font-medium">
+                Disponible
+              </div>
             </div>
-          ) : hasSubmittedSurvey ? (
-            <div className="w-full px-3 py-2 bg-green-600/20 border border-green-500/30 text-green-400 rounded-lg text-sm font-medium flex items-center justify-center space-x-2">
-              <span>✅</span>
-              <span>Ya participaste en la encuesta</span>
+            
+            {/* Time remaining */}
+            <div className="mb-3 px-3 py-2 bg-slate-700/30 border border-slate-600/30 rounded-lg">
+              <div className="flex items-center justify-center space-x-2 text-sm text-slate-300">
+                <span>⏰</span>
+                <span>{getSurveyStatus().text.split(' - ')[1]}</span>
+              </div>
             </div>
-          ) : (
-            <button
-              onClick={() => openSurvey(festival)}
-              className="w-full px-3 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2"
-            >
-              <ClipboardList className="h-4 w-4" />
-              <span>Participar en la Encuesta</span>
-            </button>
-          )
+            
+            {isCheckingSurvey ? (
+              <div className="w-full px-4 py-3 bg-slate-700/50 text-slate-400 rounded-lg text-sm font-medium flex items-center justify-center space-x-3 border border-slate-600/50">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400"></div>
+                <span>Verificando participación...</span>
+              </div>
+            ) : hasSubmittedSurvey ? (
+              <div className="w-full px-4 py-3 bg-green-600/20 border border-green-500/30 text-green-400 rounded-lg text-sm font-medium flex items-center justify-center space-x-3">
+                <span>✅</span>
+                <span>Ya participaste en la encuesta</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => openSurvey(festival)}
+                className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-3 shadow-lg shadow-green-500/25"
+              >
+                <ClipboardList className="h-4 w-4" />
+                <span>Participar en la Encuesta</span>
+              </button>
+            )}
+          </div>
         )}
-
 
         {/* Attendance buttons */}
         <div className="space-y-3">
-          {isFestivalEnded() ? (
-            <div className="text-center py-6">
-              <div className="text-gray-500 text-xs">
-                Este festival ya ha terminado
-              </div>
-            </div>
-          ) : (
+          {!isFestivalEnded() && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                <button
-                  onClick={() => handleStatusChange('have_ticket')}
-                  disabled={isUpdating}
-                  className={`relative group p-3 sm:p-4 rounded-lg sm:rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${
-                    currentStatus === 'have_ticket'
-                      ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25'
-                      : 'bg-white/5 text-white/80 hover:bg-green-500/10 hover:text-white border border-white/10'
-                  } ${isUpdating && selectedStatus === 'have_ticket' ? 'opacity-50' : ''}`}
-                >
-                  <div className="flex flex-col items-center space-y-1">
-                    <span className="text-base sm:text-lg">🎫</span>
-                    <span className="text-xs sm:text-xs font-medium">
-                      {isUpdating && selectedStatus === 'have_ticket' ? '...' : 'Tengo entrada'}
-                    </span>
-                  </div>
-                </button>
-                
-                <button
-                  onClick={() => handleStatusChange('thinking_about_it')}
-                  disabled={isUpdating}
-                  className={`relative group p-3 sm:p-4 rounded-lg sm:rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${
-                    currentStatus === 'thinking_about_it'
-                      ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/25'
-                      : 'bg-white/5 text-white/80 hover:bg-yellow-500/10 hover:text-white border border-white/10'
-                  } ${isUpdating && selectedStatus === 'thinking_about_it' ? 'opacity-50' : ''}`}
-                >
-                  <div className="flex flex-col items-center space-y-1">
-                    <span className="text-base sm:text-lg">🤔</span>
-                    <span className="text-xs sm:text-xs font-medium">
-                      {isUpdating && selectedStatus === 'thinking_about_it' ? '...' : 'Me lo pienso'}
-                    </span>
-                  </div>
-                </button>
-                
-                <button
-                  onClick={() => handleStatusChange('not_going')}
-                  disabled={isUpdating}
-                  className={`relative group p-3 sm:p-4 rounded-lg sm:rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${
-                    currentStatus === 'not_going'
-                      ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
-                      : 'bg-white/5 text-white/80 hover:bg-red-500/10 hover:text-white border border-white/10'
-                  } ${isUpdating && selectedStatus === 'not_going' ? 'opacity-50' : ''}`}
-                >
-                  <div className="flex flex-col items-center space-y-1">
-                    <span className="text-base sm:text-lg">❌</span>
-                    <span className="text-xs sm:text-xs font-medium">
-                      {isUpdating && selectedStatus === 'not_going' ? '...' : 'No voy'}
-                    </span>
-                  </div>
-                </button>
+              {/* Selection Section */}
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-white/90 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-primary-400 rounded-full mr-2"></span>
+                  Tu estado de asistencia
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => handleStatusChange('have_ticket')}
+                    disabled={isUpdating}
+                    className={`relative group p-3 sm:p-4 rounded-xl text-sm font-medium no-animation-mobile no-hover-mobile no-scale-mobile transition-all duration-200 ${
+                      currentStatus === 'have_ticket'
+                        ? 'bg-white/80 text-slate-800 font-bold shadow-lg border-2 border-green-500 backdrop-blur-sm'
+                        : 'bg-slate-800/80 text-white/90 hover:bg-slate-700/80 border-2 border-slate-600/50 backdrop-blur-sm'
+                    } ${isUpdating && selectedStatus === 'have_ticket' ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex flex-col items-center space-y-1.5">
+                      <span className="text-xl sm:text-2xl">🎫</span>
+                      <span className={`text-xs text-center ${
+                      currentStatus === 'have_ticket'
+                        ? 'font-bold' : 'font-medium'}`}>
+                        {isUpdating && selectedStatus === 'have_ticket' ? '...' : 'Tengo entrada'}
+                      </span>
+                    </div>
+                    {currentStatus === 'have_ticket' && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-xs font-bold">✓</span>
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleStatusChange('thinking_about_it')}
+                    disabled={isUpdating}
+                    className={`relative group p-3 sm:p-4 rounded-xl text-sm font-medium no-animation-mobile no-hover-mobile no-scale-mobile transition-all duration-200 ${
+                      currentStatus === 'thinking_about_it'
+                        ? 'bg-white/80 text-slate-800 font-bold shadow-lg border-2 border-yellow-500 backdrop-blur-sm'
+                        : 'bg-slate-800/80 text-white/90 hover:bg-slate-700/80 border-2 border-slate-600/50 backdrop-blur-sm'
+                    } ${isUpdating && selectedStatus === 'thinking_about_it' ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex flex-col items-center space-y-1.5">
+                      <span className="text-xl sm:text-2xl">🤔</span>
+                      <span className={`text-xs text-center ${
+                      currentStatus === 'thinking_about_it'
+                        ? 'font-bold' : 'font-medium'}`}>
+                        {isUpdating && selectedStatus === 'thinking_about_it' ? '...' : 'Me lo pienso'}
+                      </span>
+                    </div>
+                    {currentStatus === 'thinking_about_it' && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-xs font-bold">✓</span>
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleStatusChange('not_going')}
+                    disabled={isUpdating}
+                    className={`relative group p-3 sm:p-4 rounded-xl text-sm font-medium no-animation-mobile no-hover-mobile no-scale-mobile transition-all duration-200 ${
+                      currentStatus === 'not_going'
+                        ? 'bg-white/80 text-slate-800 font-bold shadow-lg border-2 border-red-500 backdrop-blur-sm'
+                        : 'bg-slate-800/80 text-white/90 hover:bg-slate-700/80 border-2 border-slate-600/50 backdrop-blur-sm'
+                    } ${isUpdating && selectedStatus === 'not_going' ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex flex-col items-center space-y-1.5">
+                      <span className="text-xl sm:text-2xl">❌</span>
+                      <span className={`text-xs text-center ${
+                      currentStatus === 'not_going'
+                        ? 'font-bold' : 'font-medium'}`}>
+                        {isUpdating && selectedStatus === 'not_going' ? '...' : 'No voy'}
+                      </span>
+                    </div>
+                    {currentStatus === 'not_going' && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-xs font-bold">✓</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
               </div>
 
-              {/* Attendance breakdown - only show if festival is not ended */}
-              {!isFestivalEnded() && (
-                <div className="grid grid-cols-3 gap-2 mt-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 mb-1">
-                      <span className="text-lg">🎫</span>
-                      <span className="text-green-400 font-semibold text-sm">{attendanceCounts.have_ticket}</span>
+              {/* Statistics Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-white/90 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-slate-400 rounded-full mr-2"></span>
+                  Estadísticas de asistencia
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 bg-slate-700/30 border border-slate-600/30 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <span className="text-xl">🎫</span>
+                      <span className="text-green-400 font-bold text-lg">{attendanceCounts.have_ticket}</span>
                     </div>
-                    <div className="text-xs text-slate-400">Con entrada</div>
+                    <div className="text-xs text-slate-300 font-medium">Con entrada</div>
                   </div>
                   
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 mb-1">
-                      <span className="text-lg">🤔</span>
-                      <span className="text-yellow-400 font-semibold text-sm">{attendanceCounts.thinking_about_it}</span>
+                  <div className="text-center p-3 bg-slate-700/30 border border-slate-600/30 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <span className="text-xl">🤔</span>
+                      <span className="text-yellow-400 font-bold text-lg">{attendanceCounts.thinking_about_it}</span>
                     </div>
-                    <div className="text-xs text-slate-400">Pensándolo</div>
+                    <div className="text-xs text-slate-300 font-medium">Pensándolo</div>
                   </div>
                   
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 mb-1">
-                      <span className="text-lg">❌</span>
-                      <span className="text-red-400 font-semibold text-sm">{attendanceCounts.not_going}</span>
+                  <div className="text-center p-3 bg-slate-700/30 border border-slate-600/30 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <span className="text-xl">❌</span>
+                      <span className="text-red-400 font-bold text-lg">{attendanceCounts.not_going}</span>
                     </div>
-                    <div className="text-xs text-slate-400">No van</div>
+                    <div className="text-xs text-slate-300 font-medium">No van</div>
                   </div>
                 </div>
-              )}
-              
+              </div>
             </>
           )}
         </div>
@@ -542,21 +581,22 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
         {/* View details button */}
         <button 
           onClick={handleViewDetails}
-          className="w-full btn-primary text-sm py-2"
+          className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg shadow-primary-500/25 no-animation-mobile no-hover-mobile no-scale-mobile"
         >
           Ver Detalles
         </button>
       </div>
+
       {/* Survey results button - when survey is closed */}
       {isFestivalEnded() && getSurveyStatus().status === 'closed' && (
-          <button
-            onClick={() => openSurveyStats(festival)}
-            className="w-full mt-2 px-3 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2"
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span>Ver Resultados de la Encuesta</span>
-          </button>
-        )}
+        <button
+          onClick={() => openSurveyStats(festival)}
+          className="w-full mt-2 px-3 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg shadow-green-500/25"
+        >
+          <BarChart3 className="h-4 w-4" />
+          <span>Ver Resultados de la Encuesta</span>
+        </button>
+      )}
 
       {/* Lightbox for poster */}
       <Lightbox
@@ -577,7 +617,6 @@ const FestivalCard = ({ festival, onEdit, onViewDetails }) => {
         cancelText="Cancelar"
         confirmVariant="danger"
       />
-
     </div>
   );
 };

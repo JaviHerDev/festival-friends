@@ -4,14 +4,24 @@ import { useState, useEffect } from 'react';
 import FestivalsList from './FestivalsList.jsx';
 import CreateFestivalModal from './CreateFestivalModal.jsx';
 import FestivalDetailsModal from './FestivalDetailsModal.jsx';
-
-
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 const FestivalsPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedFestival, setSelectedFestival] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Restore state from localStorage after hydration
   useEffect(() => {
@@ -34,8 +44,6 @@ const FestivalsPage = () => {
     }
   }, []);
 
-
-
   useEffect(() => {
     if (isHydrated) {
       if (selectedFestival) {
@@ -45,8 +53,6 @@ const FestivalsPage = () => {
       }
     }
   }, [selectedFestival, isHydrated]);
-
-
 
   const handleCloseCreateModal = () => {
     console.log('🔍 handleCloseCreateModal called - CLOSING MODAL');
@@ -59,8 +65,6 @@ const FestivalsPage = () => {
       localStorage.removeItem('festivals_details_modal_open');
     }
   };
-
-
 
   const handleCloseDetailsModal = () => {
     setIsDetailsModalOpen(false);
@@ -86,13 +90,22 @@ const FestivalsPage = () => {
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+            🎪 Festivales
+          </h1>
+          <p className="text-slate-400 text-sm sm:text-base">
+            Descubre y organiza los mejores festivales de música
+          </p>
+        </div>
         
         <button 
           onClick={() => setIsCreateModalOpen(true)}
-          className="btn-primary"
+          className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center"
         >
-          + Crear Festival
+          <PlusIcon className="h-5 w-5" />
+          <span>{isMobile ? 'Crear Festival' : '+ Crear Festival'}</span>
         </button>
       </div>
 
@@ -112,8 +125,6 @@ const FestivalsPage = () => {
         onClose={handleCloseDetailsModal}
         festival={selectedFestival}
       />
-
-
     </>
   );
 };
