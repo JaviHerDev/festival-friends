@@ -44,25 +44,24 @@ import useStore from '../store/useStore.js';
   return (
                             <div 
                           className={`
-                            relative group cursor-pointer transition-all duration-300 hover:scale-105
-                            ${selected ? 'scale-110' : ''}
+                            relative group cursor-pointer transition-transform duration-200
+                            ${selected ? 'scale-105' : ''}
                           `}
     >
-      {/* Glow effect for current user */}
+      {/* Glow effect for current user - optimizado para móvil */}
       {isCurrentUser && (
-        <div className="absolute -inset-2 bg-blue-500/20 rounded-2xl blur-xl animate-pulse" />
+        <div className="absolute -inset-2 bg-blue-500/20 rounded-2xl blur-xl" />
       )}
       
-      {/* Glassmorphism Card */}
+      {/* Glassmorphism Card - optimizado para móvil */}
                                 <div className={`
                             relative overflow-hidden rounded-2xl p-5 min-w-[240px] max-w-[300px] h-[140px]
-                            bg-gradient-to-br from-slate-800/95 to-slate-900/95
-                            border backdrop-blur-sm
-                            shadow-2xl transition-all duration-300
-                            hover:shadow-purple-500/20 hover:border-purple-500/30
-                            ${selected ? 'border-2 border-purple-500/50 shadow-purple-500/25' : ''}
-                            ${isCurrentUser ? 'border-2 border-blue-500/50 shadow-blue-500/25' : ''}
-                            ${data.level === 0 ? 'border-2 border-green-500/50 shadow-green-500/25' : ''}
+                            bg-slate-800/95
+                            border shadow-lg
+                            transition-colors duration-200
+                            ${selected ? 'border-2 border-purple-500/50' : ''}
+                            ${isCurrentUser ? 'border-2 border-blue-500/50' : ''}
+                            ${data.level === 0 ? 'border-2 border-green-500/50' : ''}
                             ${!selected && !isCurrentUser && data.level !== 0 ? 'border border-slate-700/50' : ''}
                             
                           `}>
@@ -76,9 +75,8 @@ import useStore from '../store/useStore.js';
           <div className="relative flex-shrink-0">
             <div className={`
               w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl
-              ${data.avatar_url ? 'bg-cover bg-center' : 'bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600'}
-              shadow-lg border-2 border-slate-600/50
-              transition-all duration-300
+              ${data.avatar_url ? 'bg-cover bg-center' : 'bg-blue-500'}
+              shadow-md border-2 border-slate-600/50
             `}
             style={data.avatar_url ? { backgroundImage: `url(${data.avatar_url})` } : {}}
             >
@@ -87,7 +85,7 @@ import useStore from '../store/useStore.js';
             
             {/* Connection Count Badge */}
             {data.connectionCount > 0 && (
-              <div className="absolute -top-2 -left-2 w-7 h-7 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
+              <div className="absolute -top-2 -left-2 w-7 h-7 bg-purple-500 rounded-full border-2 border-white flex items-center justify-center shadow-md">
                 <span className="text-xs font-bold text-white">{data.connectionCount}</span>
               </div>
             )}
@@ -176,12 +174,12 @@ const ReactFlowWrapper = ({
 }) => {
   const { fitView } = useReactFlow();
 
-  // Auto-fit view when data changes
+  // Auto-fit view when data changes - optimizado para móvil
   useEffect(() => {
     if (nodes.length > 0) {
       setTimeout(() => {
-        fitView({ padding: 0.3, duration: 1000 });
-      }, 100);
+        fitView({ padding: 0.2, duration: 500 });
+      }, 200);
     }
   }, [nodes, fitView]);
 
@@ -193,24 +191,26 @@ const ReactFlowWrapper = ({
       onNodeClick={onNodeClick}
       onEdgeClick={onEdgeClick}
       fitView
-      fitViewOptions={{ padding: 0.3 }}
-      minZoom={0.05}
-      maxZoom={4}
-      defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+      fitViewOptions={{ padding: 0.2 }}
+      minZoom={0.1}
+      maxZoom={3}
+      defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
       proOptions={{ hideAttribution: true }}
-      className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-      connectionLineStyle={{ stroke: '#8b5cf6', strokeWidth: 2.5, strokeDasharray: '10,5' }}
+      className="bg-slate-900"
+      connectionLineStyle={{ stroke: '#8b5cf6', strokeWidth: 2, strokeDasharray: '8,4' }}
       connectionLineType="straight"
-      snapToGrid={true}
-      snapGrid={[15, 15]}
+      snapToGrid={false}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      elementsSelectable={true}
     >
       {showBackground && (
         <Background
           variant="dots"
-          gap={30}
-          size={2}
+          gap={40}
+          size={1}
           color="#475569"
-          className="opacity-20"
+          className="opacity-10"
         />
       )}
       
@@ -218,8 +218,8 @@ const ReactFlowWrapper = ({
         <Controls
           showZoom={true}
           showFitView={true}
-          showInteractive={true}
-          className="bg-slate-800/90 border border-slate-700/50 rounded-xl backdrop-blur-sm"
+          showInteractive={false}
+          className="bg-slate-800/80 border border-slate-700/50 rounded-lg"
         />
       )}
       
@@ -227,14 +227,14 @@ const ReactFlowWrapper = ({
         <MiniMap
           nodeColor="#8b5cf6"
           nodeStrokeColor="#ffffff"
-          nodeStrokeWidth={3}
-          maskColor="rgba(0, 0, 0, 0.6)"
-          className="bg-slate-800/90 border border-slate-700/50 rounded-xl backdrop-blur-sm"
+          nodeStrokeWidth={2}
+          maskColor="rgba(0, 0, 0, 0.4)"
+          className="bg-slate-800/80 border border-slate-700/50 rounded-lg"
         />
       )}
       
       {/* Enhanced Panel */}
-      <Panel position="top-right" className="bg-slate-800/30 border border-slate-700/30 rounded-lg p-2 backdrop-blur-sm">
+      <Panel position="top-right" className="bg-slate-800/40 border border-slate-700/40 rounded-lg p-2">
         <div className="flex items-center space-x-4 text-xs text-slate-400">
           <span>Nodos: {nodes.length}</span>
           <span>Conexiones: {edges.length}</span>
@@ -392,8 +392,17 @@ const ConnectionsTree = () => {
   const [showBackground, setShowBackground] = useState(true);
       // Only grid layout available
 
-  // Detect mobile device
+  // Detect mobile device and optimize settings
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  
+  // Optimize settings for mobile
+  useEffect(() => {
+    if (isMobile) {
+      setShowControls(false);
+      setShowMiniMap(false);
+      setShowBackground(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const initUsers = async () => {
@@ -415,10 +424,10 @@ const ConnectionsTree = () => {
     const nodes = [];
     const edges = [];
 
-    // Grid layout for better distribution
-      const nodeWidth = 300;
-      const nodeHeight = 140;
-      const padding = 80;
+    // Grid layout for better distribution - optimized for mobile
+      const nodeWidth = isMobile ? 280 : 300;
+      const nodeHeight = isMobile ? 120 : 140;
+      const padding = isMobile ? 60 : 80;
       const cols = Math.ceil(Math.sqrt(users.length));
       const rows = Math.ceil(users.length / cols);
       
@@ -557,7 +566,7 @@ const ConnectionsTree = () => {
     );
   }, [edges, filteredNodes, searchTerm]);
 
-  // Node types
+  // Node types - memoized to prevent re-renders
   const nodeTypes = useMemo(() => ({
     userNode: UserNode
   }), []);

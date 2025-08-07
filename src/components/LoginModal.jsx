@@ -106,6 +106,7 @@ const LoginModal = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
 
   // Función para validar un campo específico
@@ -310,12 +311,25 @@ const LoginModal = () => {
       // Subir avatar si se seleccionó uno
       if (avatarFile && data?.user) {
         setIsUploadingAvatar(true);
+        setUploadProgress(0);
+
+        // Simular progreso durante la subida
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev >= 90) return prev;
+            return prev + Math.random() * 15;
+          });
+        }, 200);
+
         const { data: uploadData, error: uploadError } = await uploadAvatar(data.user.id, avatarFile);
         
         if (uploadError) {
           console.error('Error uploading avatar:', uploadError);
           toast.warning('Advertencia', 'La cuenta se creó pero no se pudo subir el avatar. Puedes actualizarlo más tarde.');
         } else {
+          // Completar el progreso
+          setUploadProgress(100);
+          
           // Actualizar el perfil con la URL del avatar
           avatarUrl = uploadData.publicUrl;
           
@@ -331,7 +345,11 @@ const LoginModal = () => {
             console.log('User profile updated with avatar URL:', avatarUrl);
           }
         }
+        
+        clearInterval(progressInterval);
         setIsUploadingAvatar(false);
+        // Resetear progreso después de un momento
+        setTimeout(() => setUploadProgress(0), 1000);
       }
       
       setError('');
@@ -362,6 +380,7 @@ const LoginModal = () => {
     setShowPassword(false);
     setAvatarFile(null);
     setAvatarPreview(null);
+    setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -554,6 +573,22 @@ const LoginModal = () => {
                           <p className="text-xs text-slate-500">
                             JPG, PNG o GIF • Máximo 5MB
                           </p>
+                          
+                          {/* Barra de progreso */}
+                          {isUploadingAvatar && (
+                            <div className="mt-3 space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-400">Subiendo imagen...</span>
+                                <span className="text-primary-400 font-medium">{Math.round(uploadProgress)}%</span>
+                              </div>
+                              <div className="w-full bg-slate-700/50 rounded-full h-1.5 overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-300 ease-out"
+                                  style={{ width: `${uploadProgress}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <input

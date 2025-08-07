@@ -9,6 +9,12 @@ const ProfileModal = ({ isOpen, onClose }) => {
   const { user, userProfile, setUser, users, loadUsers } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAvatar, setIsLoadingAvatar] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Debug: Log cuando cambia el estado de carga
+  useEffect(() => {
+    console.log('Estado de carga de avatar cambiado:', isLoadingAvatar, 'Progreso:', uploadProgress);
+  }, [isLoadingAvatar, uploadProgress]);
   const [error, setError] = useState('');
   const [nexusSearchTerm, setNexusSearchTerm] = useState('');
   const [showNexusDropdown, setShowNexusDropdown] = useState(false);
@@ -129,7 +135,18 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    console.log('Iniciando subida de avatar...');
     setIsLoadingAvatar(true);
+    setUploadProgress(0);
+
+    // Simular progreso durante la subida
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        const newProgress = prev >= 90 ? prev : prev + Math.random() * 15;
+        console.log('Progreso:', newProgress);
+        return newProgress;
+      });
+    }, 200);
 
     try {
       const { data, error } = await uploadAvatar(user.id, file);
@@ -137,6 +154,10 @@ const ProfileModal = ({ isOpen, onClose }) => {
       if (error) {
         throw error;
       }
+
+      // Completar el progreso
+      setUploadProgress(100);
+      console.log('Subida completada al 100%');
 
       // Actualizar el formData con la nueva URL
       setFormData(prev => ({
@@ -150,7 +171,10 @@ const ProfileModal = ({ isOpen, onClose }) => {
       console.error('Error uploading avatar:', error);
       toast.error('Error al subir imagen', error.message || 'No se pudo cargar la imagen. Inténtalo de nuevo.');
     } finally {
+      clearInterval(progressInterval);
       setIsLoadingAvatar(false);
+      // Resetear progreso después de un momento
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -253,7 +277,22 @@ const ProfileModal = ({ isOpen, onClose }) => {
               </div>
               
               {isLoadingAvatar && (
-                <p className="text-sm text-slate-400 mt-2">Subiendo imagen...</p>
+                <div className="mt-3 space-y-2 max-w-xs mx-auto">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">Subiendo imagen...</span>
+                    <span className="text-primary-400 font-medium">{Math.round(uploadProgress)}%</span>
+                  </div>
+                  <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  {/* Debug info */}
+                  <div className="text-xs text-slate-500">
+                    Debug: isLoadingAvatar={isLoadingAvatar.toString()}, progress={uploadProgress}
+                  </div>
+                </div>
               )}
             </div>
 
