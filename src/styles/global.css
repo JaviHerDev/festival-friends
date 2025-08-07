@@ -200,55 +200,95 @@
   }
   
   /* Mobile-specific improvements - NO ANIMATIONS */
-  @media (max-width: 640px) {
-    .card {
-      @apply p-4; /* Smaller padding on mobile */
-    }
-    
-    .glass {
-      /* Less blur on mobile for better performance */
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    
-    /* Improve mobile grid layouts */
-    .grid {
-      gap: 1rem; /* Consistent gap on mobile */
-    }
-    
-    /* Better mobile spacing */
-    .space-y-6 > * + * {
-      margin-top: 1.5rem;
-    }
-    
-    .space-y-4 > * + * {
-      margin-top: 1rem;
-    }
-    
-    /* Mobile-optimized buttons */
-    .btn-primary,
-    .btn-secondary {
-      @apply py-3 px-4; /* Larger touch targets */
-      font-size: 1rem;
-    }
-    
-    /* Mobile-optimized inputs */
-    .input {
-      @apply py-3 px-4;
-      font-size: 1rem;
-    }
-    
-    /* Mobile-optimized modals */
-    .modal-overlay {
-      padding: 1rem;
-    }
-    
-    /* Mobile-optimized dropdowns */
-    .dropdown-menu {
-      max-width: calc(100vw - 2rem);
-      margin: 0 1rem;
-    }
+@media (max-width: 640px) {
+  .card {
+    @apply p-4; /* Smaller padding on mobile */
   }
+  
+  .glass {
+    /* Less blur on mobile for better performance */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  /* Improve mobile grid layouts */
+  .grid {
+    gap: 1rem; /* Consistent gap on mobile */
+  }
+  
+  /* Better mobile spacing */
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Mobile-optimized buttons */
+  .btn-primary,
+  .btn-secondary {
+    @apply py-3 px-4; /* Larger touch targets */
+    font-size: 1rem;
+  }
+  
+  /* Mobile-optimized inputs */
+  .input {
+    @apply py-3 px-4;
+    font-size: 1rem;
+  }
+  
+  /* Mobile-optimized modals */
+  .modal-overlay {
+    padding: 1rem;
+  }
+  
+  /* Mobile-optimized dropdowns */
+  .dropdown-menu {
+    max-width: calc(100vw - 2rem);
+    margin: 0 1rem;
+  }
+  
+  /* Notification panel mobile optimizations */
+  .notification-panel {
+    border-radius: 1rem;
+    margin: 0.5rem;
+    max-height: calc(100vh - 1rem);
+  }
+  
+  /* Better mobile notification items */
+  .notification-item {
+    @apply p-4;
+    min-height: 80px; /* Ensure consistent height */
+  }
+  
+  /* Mobile swipe gestures */
+  .swipeable {
+    touch-action: pan-y pinch-zoom;
+    user-select: none;
+  }
+  
+  /* Mobile pull-to-refresh */
+  .pull-to-refresh {
+    touch-action: pan-y;
+  }
+  
+  /* Mobile notification badge improvements */
+  .notification-badge {
+    @apply shadow-lg border;
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  
+  /* Mobile notification button improvements */
+  .notification-button {
+    @apply active:scale-95 touch-manipulation;
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
   
   /* Tablet optimizations */
   @media (min-width: 641px) and (max-width: 1024px) {

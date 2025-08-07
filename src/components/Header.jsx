@@ -254,16 +254,11 @@ const Header = () => {
             <div className="flex-shrink-0">
               <a href="/" className="flex items-center space-x-2 select-none">
                 <span className="text-2xl sm:text-3xl">🎸</span>
-                {!isMobile && (
-                  <span className="flex items-center">
-                    <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Festival</span>
-                    <span className="text-white text-xl sm:text-2xl lg:text-3xl font-bold leading-none mx-1">&</span>
-                    <span className="gradient-text text-xl sm:text-2xl lg:text-3xl font-bold leading-none">Friends</span>
-                  </span>
-                )}
-                {isMobile && (
-                  <span className="gradient-text text-lg font-bold">F&F</span>
-                )}
+                <span className="flex items-center">
+                  <span className="gradient-text text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold leading-none">Festival</span>
+                  <span className="text-white text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold leading-none mx-1">&</span>
+                  <span className="gradient-text text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold leading-none">Friends</span>
+                </span>
               </a>
             </div>
 
@@ -356,7 +351,8 @@ const Header = () => {
                   {/* Notifications */}
                   <button
                     onClick={handleNotificationsClick}
-                    className="relative p-2 text-slate-400 hover:text-white transition-colors"
+                    className="relative p-2 sm:p-2.5 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800/50 active:scale-95 touch-manipulation notification-button"
+                    aria-label={`Notificaciones ${unreadNotifications > 0 ? `(${unreadNotifications} sin leer)` : ''}`}
                   >
                     {unreadNotifications > 0 ? (
                       <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-primary-400 fill-current" />
@@ -364,9 +360,14 @@ const Header = () => {
                       <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
                     )}
                     {unreadNotifications > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center shadow-lg border border-red-400/30 notification-badge">
                         {unreadNotifications > 9 ? '9+' : unreadNotifications}
                       </span>
+                    )}
+                    
+                    {/* Mobile pulse effect for unread notifications */}
+                    {unreadNotifications > 0 && isMobile && (
+                      <span className="absolute inset-0 bg-primary-400/20 rounded-lg animate-ping"></span>
                     )}
                   </button>
 
