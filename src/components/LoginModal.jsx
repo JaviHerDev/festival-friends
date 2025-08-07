@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Mail, Lock, User, MapPin, Phone, Instagram, Twitter, FileText, Camera, Upload, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import useStore from '../store/useStore.js';
 import { toast } from '../store/toastStore.js';
-import { signIn, signUp, getUserProfile, uploadAvatar, updateUserProfile } from '../lib/supabase.js';
+import { signIn, signUp, getUserProfile, uploadAvatar, updateUserProfile, resetPassword } from '../lib/supabase.js';
 import UserAvatar from './UserAvatar.jsx';
 
 // Funciones de validación
@@ -79,8 +79,12 @@ const validateKeyPhrase = (keyPhrase) => {
 const LoginModal = () => {
   const { isLoginModalOpen, setLoginModalOpen, setUser } = useStore();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -386,6 +390,50 @@ const LoginModal = () => {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast.error('Error', 'Por favor introduce tu email');
+      return;
+    }
+
+    const emailValidation = validateEmail(resetEmail);
+    if (!emailValidation.isValid) {
+      toast.error('Error', emailValidation.message);
+      return;
+    }
+
+    setIsResetLoading(true);
+    setError('');
+
+    try {
+      const { data, error } = await resetPassword(resetEmail);
+      
+      if (error) {
+        throw error;
+      }
+
+      setResetEmailSent(true);
+      toast.success('Email enviado', 'Revisa tu bandeja de entrada para restablecer tu contraseña');
+      
+    } catch (error) {
+      console.error('Error sending reset email:', error);
+      setError('No se pudo enviar el email de restablecimiento. Verifica tu email e inténtalo de nuevo.');
+      toast.error('Error', 'No se pudo enviar el email de restablecimiento');
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setIsForgotPassword(false);
+    setIsSignUp(false);
+    setResetEmail('');
+    setResetEmailSent(false);
+    setError('');
+  };
+
   const handleClose = () => {
     // Verificar si hay datos introducidos o campos tocados
     const hasData = Object.values(formData).some(value => value.trim() !== '') || avatarFile;
@@ -396,6 +444,7 @@ const LoginModal = () => {
       if (confirm('¿Estás seguro de que quieres cerrar? Se perderán todos los datos introducidos.')) {
         setLoginModalOpen(false);
         setIsSignUp(false);
+        setIsForgotPassword(false);
         setError('');
         resetForm();
       }
@@ -403,6 +452,7 @@ const LoginModal = () => {
       // Si no hay datos, cerrar directamente
       setLoginModalOpen(false);
       setIsSignUp(false);
+      setIsForgotPassword(false);
       setError('');
       resetForm();
     }
@@ -500,10 +550,10 @@ const LoginModal = () => {
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-2xl font-semibold text-white mb-1">
-                  {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
+                  {isForgotPassword ? 'Restablecer contraseña' : isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
                 </h2>
                 <p className="text-slate-400 text-sm">
-                  {isSignUp ? 'Únete a la comunidad festivalera' : 'Accede a tu cuenta'}
+                  {isForgotPassword ? 'Recupera el acceso a tu cuenta' : isSignUp ? 'Únete a la comunidad festivalera' : 'Accede a tu cuenta'}
                 </p>
               </div>
               <button 
@@ -524,7 +574,75 @@ const LoginModal = () => {
 
           {/* Form Content */}
           <div className="px-6 py-6 overflow-y-auto max-h-[60vh]">
-            <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-5">
+            {isForgotPassword ? (
+              // Forgot Password Form
+              <form onSubmit={handleForgotPassword} className="space-y-5">
+                {resetEmailSent ? (
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle className="h-8 w-8 text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-2">¡Email enviado!</h3>
+                      <p className="text-slate-400 text-sm">
+                        Hemos enviado un enlace de restablecimiento a <strong>{resetEmail}</strong>
+                      </p>
+                      <p className="text-slate-500 text-xs mt-2">
+                        Revisa tu bandeja de entrada y sigue las instrucciones para crear una nueva contraseña.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleBackToLogin}
+                      className="w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+                    >
+                      Volver al inicio de sesión
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        required
+                        className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 text-sm"
+                        placeholder="tu@email.com"
+                      />
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      disabled={isResetLoading}
+                      className="w-full px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    >
+                      {isResetLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Enviando...</span>
+                        </>
+                      ) : (
+                        <span>Enviar email de restablecimiento</span>
+                      )}
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={handleBackToLogin}
+                      className="w-full px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium rounded-lg transition-colors"
+                    >
+                      Volver al inicio de sesión
+                    </button>
+                  </>
+                )}
+              </form>
+            ) : (
+              // Login/SignUp Form
+              <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-5">
               
               {isSignUp && (
                 <div className="space-y-5">
@@ -812,6 +930,19 @@ const LoginModal = () => {
                     </div>
                     <FieldError error={fieldErrors.password} touched={touchedFields.password} />
                     <FieldSuccess isValid={!fieldErrors.password && formData.password} touched={touchedFields.password} />
+                    
+                    {/* Forgot Password Link - Only show in login mode */}
+                    {!isSignUp && (
+                      <div className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => setIsForgotPassword(true)}
+                          className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        >
+                          ¿Has olvidado tu contraseña?
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -857,6 +988,7 @@ const LoginModal = () => {
                 </div>
               )}
             </form>
+            )}
           </div>
 
           {/* Footer */}
@@ -869,16 +1001,18 @@ const LoginModal = () => {
                 Cancelar
               </button>
               
-              <button
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError('');
-                  resetForm();
-                }}
-                className="text-primary-400 hover:text-primary-300 transition-colors text-sm px-3 py-1 rounded-lg hover:bg-slate-700/50"
-              >
-                {isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
-              </button>
+              {!isForgotPassword && (
+                <button
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError('');
+                    resetForm();
+                  }}
+                  className="text-primary-400 hover:text-primary-300 transition-colors text-sm px-3 py-1 rounded-lg hover:bg-slate-700/50"
+                >
+                  {isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -135,6 +135,22 @@ export const signOut = async () => {
   return { error };
 };
 
+// Reset password functionality
+export const resetPassword = async (email) => {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getRedirectUrl()}auth/reset-password`
+  });
+  return { data, error };
+};
+
+// Update password functionality
+export const updatePassword = async (newPassword) => {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  return { data, error };
+};
+
 export const getCurrentUser = async () => {
   try {
     console.log('📡 Calling supabase.auth.getUser()...'); // Debug
